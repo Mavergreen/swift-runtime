@@ -28,8 +28,12 @@ test "$(git -C llvm-project rev-parse HEAD)" = "$LLVM_SHA" || {
 [ -d llvm-project/llvm ] || { echo "FAIL: llvm-project checkout incomplete"; exit 1; }
 
 echo "==> 2. configure + build TableGen only (libswiftCore does not link LLVM)"
+# spec: 2026-09-13 shipyard CMake flag day -- the .cmake files installed in step 3 ARE the shipped
+#       product, and swift-runtime's build.sh consumes them with shipyard-cmake. Generating them
+#       with one CMake and consuming them with another is the mismatch this repo exists to prevent,
+#       so the same pinned shipyard-cmake writes them.
 if [ ! -x llvm-build/bin/llvm-tblgen ]; then
-  cmake -G Ninja -S llvm-project/llvm -B llvm-build \
+  shipyard-cmake -G Ninja -S llvm-project/llvm -B llvm-build \
     -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_PROJECTS=clang \
     -DLLVM_TARGETS_TO_BUILD="X86;AArch64" \
     -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
@@ -43,7 +47,7 @@ fi
 echo "==> 3. install the relocatable subset"
 rm -rf "$OUT"; mkdir -p "$OUT"
 for c in cmake-exports llvm-headers clang-cmake-exports clang-headers; do
-  cmake --install llvm-build --prefix "$OUT" --component "$c"
+  shipyard-cmake --install llvm-build --prefix "$OUT" --component "$c"
 done
 mkdir -p "$OUT/bin"
 for b in llvm-tblgen clang-tblgen llvm-config llvm-min-tblgen; do

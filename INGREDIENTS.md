@@ -5,9 +5,13 @@ Everything baked into what this repo publishes, and how a change to it reaches a
 
 This repo is unusual in the family twice over: it publishes a **build environment** for
 `ModernMavericks/swift-runtime` rather than an end-user `.pkg`, and it consumes **none** of
-shipyard's CMake facilities — no updater, no `.pkg`, no 10.9 install floor, so nothing to stage or
-sign. It still runs the family conventions gate, because conventions that only apply to the typical
-repo are not conventions.
+shipyard's CMake *modules* — no `CMakeLists.txt` of its own, no `find_package(MavericksShipyard)`,
+no updater, no `.pkg`, no 10.9 install floor, so nothing to stage or sign. It does build and gate
+with **`shipyard-cmake`**: the `lib/cmake/llvm/*.cmake` files inside the shipped tarball are the
+product, `swift-runtime` consumes them with `shipyard-cmake`, and generating them with a different
+CMake than the one that reads them is exactly the mismatch this repo exists to prevent. It still
+runs the family conventions gate, because conventions that only apply to the typical repo are not
+conventions.
 
 | Ingredient | Pinned in | Renovate | On a bump |
 |---|---|---|---|

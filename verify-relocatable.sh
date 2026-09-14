@@ -44,7 +44,10 @@ tar -C gate-relocated -xzf "$TARBALL"
 R="$ROOT/gate-relocated/llvm"
 
 echo "==> 4. configure Swift stdlib-only against the RELOCATED tree"
-cmake -G Ninja -S swift -B gate-build \
+# spec: 2026-09-13 shipyard CMake flag day -- swift-runtime's build.sh configures the stdlib with
+#       shipyard-cmake, and this gate is the rehearsal of that. Configuring it with any other cmake
+#       would stop testing what the consumer actually does.
+shipyard-cmake -G Ninja -S swift -B gate-build \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_C_COMPILER="$TC/bin/clang" -DCMAKE_CXX_COMPILER="$TC/bin/clang++" \
   -DLLVM_DIR="$R/lib/cmake/llvm" \
