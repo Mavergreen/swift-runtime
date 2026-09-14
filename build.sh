@@ -4,7 +4,8 @@
 # Produces: out/libswiftCore.dylib (+ libswiftSwiftOnoneSupport.dylib), minOS 10.9,
 # from Swift 6.3.3 swift.org sources, with NO Apple prebuilt runtime bytes redistributed.
 #
-# Host: macOS with Xcode Command Line Tools (full Xcode NOT required), cmake + ninja + git.
+# Host: macOS with Xcode Command Line Tools (full Xcode NOT required), ninja + git, and the
+# shipyard pkg (it provides shipyard-cmake, the only cmake this family configures with).
 # Cross-target build (host may be arm64; output is x86_64). ~30-60 min from clean on 8 cores.
 #
 # Everything is PINNED below. Do not float versions — the stdlib is coupled to its compiler.
@@ -140,7 +141,7 @@ echo "==> 4. Swift STDLIB-ONLY configure (prebuilt toolchain as native tools)"
 # skipped under SWIFT_INCLUDE_TESTS=OFF / SWIFT_INCLUDE_TOOLS=OFF -- so no LLVM source is needed.
 # Clang_DIR, LLVM_TABLEGEN and CLANG_TABLEGEN are deliberately absent: CMake reports them
 # unused in this configuration, since the branch that would read them is behind SWIFT_INCLUDE_TOOLS.
-cmake -G Ninja -S swift -B stdlib-build \
+shipyard-cmake -G Ninja -S swift -B stdlib-build \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_C_COMPILER="$TC/bin/clang" -DCMAKE_CXX_COMPILER="$TC/bin/clang++" \
   -DLLVM_DIR="$LLVMB/lib/cmake/llvm" \
