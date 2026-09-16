@@ -13,26 +13,12 @@ DIST="${DIST:-$PWD/dist}"
 # from UPSTREAM_VERSION + the shipped tags. Never a committed file.
 HERE="$(cd "$(dirname "$0")" && pwd)"
 [ -f "$HERE/UPSTREAM_VERSION" ] || sh "$HERE/scripts/derive-upstream-version.sh" >/dev/null
-. "$HERE/msc.sh"        # -> $SHIPYARD (shipyard scripts dir)
+. "$HERE/msc.sh"        # -> $SHIPYARD: resolve-version, stage_updater and set_install_floor
 VERSION="$(MAVERICKS_ROOT="$HERE" sh "$SHIPYARD/resolve-version.sh")"
 IDENTIFIER="${PKG_IDENTIFIER:-dev.modernmavericks.swift-runtime}"
 NAME="swift-runtime-${VERSION}"
 mkdir -p "$DIST"
 [ -f "$OUT/usr/lib/swift/libswiftCore.dylib" ] || { echo "no build in $OUT; run build.sh" >&2; exit 1; }
-
-# Locate mavericks-shipyard's scripts dir: installed SHIPYARD (find_package registry / --prefix), env
-# override, or a sibling checkout. Not vendored -- consumed like the siblings. Both set_install_floor
-# and stage_updater come from here.
-HELPER=""
-for c in \
-  "${SHIPYARD_SCRIPTS:-}/set_install_floor.sh" \
-  "${MavericksShipyard_SCRIPTS:-}/set_install_floor.sh" \
-  "$HOME/.local/share/cmake/MavericksShipyard/scripts/set_install_floor.sh" \
-  "$PWD/../mavericks-shipyard/scripts/set_install_floor.sh" ; do
-  [ -n "$c" ] && [ -f "$c" ] && { HELPER="$c"; break; }
-done
-[ -n "$HELPER" ] || { echo "package: cannot find mavericks-shipyard set_install_floor.sh (install SHIPYARD or set SHIPYARD_SCRIPTS)" >&2; exit 4; }
-SHIPYARD="$(cd "$(dirname "$HELPER")" && pwd)"
 
 echo ">> resources (welcome + license shown at install)"
 RES="$DIST/resources"; mkdir -p "$RES"
@@ -52,7 +38,7 @@ if [ -d "$UPD_APP" ]; then
     --scripts-out "$SCR"
   set -- --scripts "$SCR"
 else
-  echo "   (no updater app at $UPD_APP; packaging runtime only -- build it: cmake --build build/updater)"
+  echo "   (no updater app at $UPD_APP; packaging runtime only -- build it: shipyard-cmake --build build/updater)"
 fi
 
 echo ">> flat component pkg (payload -> /usr/lib/swift, /usr/local, /Library/LaunchAgents)"
@@ -61,7 +47,7 @@ pkgbuild --root "$OUT" --identifier "$IDENTIFIER" --version "$VERSION" \
   --install-location / "$DIST/swift-runtime-component.pkg"
 
 echo ">> product archive with 10.9.5 floor (shared helper)"
-sh "$HELPER" \
+sh "$SHIPYARD/set_install_floor.sh" \
   --identifier "$IDENTIFIER" \
   --title "Mavericks Swift Runtime — Swift core runtime for OS X 10.9" \
   --component "$DIST/swift-runtime-component.pkg" \

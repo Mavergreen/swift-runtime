@@ -61,8 +61,9 @@ jobs:
           # existing *-mavericks.* tags, so the full history has to be here.
           fetch-depth: 0
 
-      # shipyard installs itself via its own action (HTTPS via the runner token); consumed thereafter
-      # via find_package(MavericksShipyard) + the installed ${MavericksShipyard_SCRIPTS}.
+      # shipyard installs itself via its own action (HTTPS via the runner token): the pkg, which puts
+      # shipyard-cmake on PATH and exports $SHIPYARD_SCRIPTS. Consumed thereafter via
+      # find_package(MavericksShipyard) under shipyard-cmake, and via msc.sh in the shell scripts.
       - name: Install mavericks-shipyard
         uses: ModernMavericks/shipyard/.github/actions/install@v1
 
@@ -134,8 +135,8 @@ jobs:
       - name: Build SwiftUpdater.app (Cocoa/Sparkle; must NOT link Swift)
         run: |
           # The Sparkle framework is fetched inside mavericks_add_updater_app (mavericks_fetch_sparkle).
-          cmake -S . -B build/updater -DCMAKE_OBJC_COMPILER=/usr/bin/clang
-          cmake --build build/updater --target SwiftUpdater
+          shipyard-cmake -S . -B build/updater -DCMAKE_OBJC_COMPILER=/usr/bin/clang
+          shipyard-cmake --build build/updater --target SwiftUpdater
           otool -L build/updater/SwiftUpdater.app/Contents/MacOS/SwiftUpdater | tee /tmp/o.txt
           ! grep -q '/usr/lib/swift' /tmp/o.txt || { echo "::error::updater links libswiftCore (self-update circularity)"; exit 1; }
 

@@ -9,18 +9,9 @@
 # Usage: scripts/guard.sh <dylib> [<dylib> ...]
 set -eu
 
-# Locate the shared guard from mavericks-shipyard: installed SHIPYARD (find_package registry /
-# --prefix), an env override, or a sibling checkout. Not vendored -- consumed like trackpad2/dimmit.
-SHARED=""
-for c in \
-  "${SHIPYARD_SCRIPTS:-}/assert_binary_compatible.sh" \
-  "${MavericksShipyard_SCRIPTS:-}/assert_binary_compatible.sh" \
-  "$HOME/.local/share/cmake/MavericksShipyard/scripts/assert_binary_compatible.sh" \
-  "$(dirname "$0")/../../mavericks-shipyard/scripts/assert_binary_compatible.sh" ; do
-  [ -n "$c" ] && [ -f "$c" ] && { SHARED="$c"; break; }
-done
-[ -n "$SHARED" ] || { echo "guard: cannot find mavericks-shipyard assert_binary_compatible.sh" >&2
-                      echo "       install it (cmake --install) or set SHIPYARD_SCRIPTS." >&2; exit 4; }
+. "$(dirname "$0")/../msc.sh"   # -> $SHIPYARD (shipyard scripts dir)
+SHARED="$SHIPYARD/assert_binary_compatible.sh"
+[ -f "$SHARED" ] || { echo "guard: shipyard at $SHIPYARD has no assert_binary_compatible.sh" >&2; exit 4; }
 
 # Full post-10.9 os_* family, tolerant of the one/two leading-underscore SPI naming.
 export MAVERICKS_POST_10_9_SYMBOLS='__?os_signpost.*|__?os_log.*|_os_system_version_get_current_version|__?os_availability.*'
