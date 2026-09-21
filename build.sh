@@ -38,10 +38,15 @@ ARCH="x86_64"
 
 HERE="$(cd "$(dirname "$0")" && pwd)"   # script dir (= repo root); capture BEFORE any cd, since $0
                                          # is relative when invoked as ./build.sh and we cd below.
-# Scratch defaults to ./work (what CI uses). Override when the checkout lives on slow storage:
-# this tree is NFS-backed, where expanding the 4.6 GB toolchain payload takes hours. CI leaves
-# this unset -- runner disk is local.
-ROOT="${SWIFT_RUNTIME_WORK:-$HERE/work}"
+# platform: a family checkout may live on NFS, where a build cost 11.16s wall / 25% CPU against
+#           2.96s / 88% on local disk, identical user time -- the whole difference is I/O wait.
+: "${MAVERICKS_BUILD_ROOT:=${TMPDIR:-/tmp}/mm-build}"
+SWRT_BUILD="$MAVERICKS_BUILD_ROOT/swift-runtime-cross"
+# Scratch defaults out of the source tree, onto $MAVERICKS_BUILD_ROOT (CI: $RUNNER_TEMP, local disk).
+# SWIFT_RUNTIME_WORK still overrides directly -- e.g. to point AT the tree for a deliberate in-tree
+# build, or elsewhere entirely when the checkout itself lives on slow storage (expanding the 4.6 GB
+# toolchain payload there took hours; the difference is I/O wait, not CPU).
+ROOT="${SWIFT_RUNTIME_WORK:-$SWRT_BUILD/work}"
 mkdir -p "$ROOT"; cd "$ROOT"
 SDK="$(xcrun --show-sdk-path)"
 DI="/Library/Developer/CommandLineTools/usr/bin/dyld_info"
@@ -168,7 +173,7 @@ ninja -C stdlib-build swiftCore-macosx-$ARCH swiftSwiftOnoneSupport-macosx-$ARCH
 
 echo "==> 6. stage output (install layout: out/usr/lib/swift/ so package.sh's pkgbuild --root works)"
 REPO="$HERE"
-OUT="$REPO/out"; DEST="$OUT/usr/lib/swift"; mkdir -p "$DEST"
+OUT="${SWIFT_RUNTIME_OUT:-$SWRT_BUILD/out}"; DEST="$OUT/usr/lib/swift"; mkdir -p "$DEST"
 CORE="$DEST/libswiftCore.dylib"
 cp stdlib-build/lib/swift/macosx/$ARCH/libswiftCore.dylib "$CORE"
 cp stdlib-build/lib/swift/macosx/$ARCH/libswiftSwiftOnoneSupport.dylib "$DEST/" 2>/dev/null || true

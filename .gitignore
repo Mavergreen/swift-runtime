@@ -1,8 +1,4 @@
 .build/
-build/
-out/
-work/
-dist/
 *.pkg
 *.tar.gz
 # Never commit Apple SDK/toolchain bytes or built runtime binaries.
@@ -15,6 +11,7 @@ docs/
 /VERSION
 /UPSTREAM_VERSION
 
-# `build/` above covers -B build/updater, but the stdlib is configured `-B stdlib-build` and was
-# covered by nothing.
-stdlib-build/
+# Default build root is $MAVERICKS_BUILD_ROOT (outside the tree); build/, out/, work/ (with its
+# nested stdlib-build/), and dist/ are only the deliberate-in-tree escape hatch
+# (MAVERICKS_BUILD_ROOT="$PWD" ./build.sh).
+/swift-runtime-cross/

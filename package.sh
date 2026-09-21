@@ -7,8 +7,12 @@
 # components; our payload is a plain libswiftCore.dylib (a file), always installed.
 set -eu
 
-OUT="${OUT:-$PWD/out}"
-DIST="${DIST:-$PWD/dist}"
+# platform: a family checkout may live on NFS, where a build cost 11.16s wall / 25% CPU against
+#           2.96s / 88% on local disk, identical user time -- the whole difference is I/O wait.
+: "${MAVERICKS_BUILD_ROOT:=${TMPDIR:-/tmp}/mm-build}"
+SWRT_BUILD="$MAVERICKS_BUILD_ROOT/swift-runtime-cross"
+OUT="${OUT:-$SWRT_BUILD/out}"
+DIST="${DIST:-$SWRT_BUILD/dist}"
 # The full version: reuses VERSION if the workflow already resolved it this run, else derives it
 # from UPSTREAM_VERSION + the shipped tags. Never a committed file.
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -26,7 +30,7 @@ cp scripts/resources/Welcome.html "$RES/"
 [ -f "$OUT/LICENSE.txt" ] && cp "$OUT/LICENSE.txt" "$RES/" || echo "   (no LICENSE.txt in OUT; build.sh should vendor it)"
 
 echo ">> stage updater app + LaunchAgent + postinstall into the payload (if built)"
-UPD_APP="${UPD_APP:-$PWD/build/updater/SwiftUpdater.app}"
+UPD_APP="${UPD_APP:-$SWRT_BUILD/build/updater/SwiftUpdater.app}"
 set --                                    # pkgbuild gets --scripts only when there IS a postinstall
 if [ -d "$UPD_APP" ]; then
   SCR="$DIST/pkg-scripts"; rm -rf "$SCR"; mkdir -p "$SCR"
@@ -38,7 +42,7 @@ if [ -d "$UPD_APP" ]; then
     --scripts-out "$SCR"
   set -- --scripts "$SCR"
 else
-  echo "   (no updater app at $UPD_APP; packaging runtime only -- build it: shipyard-cmake --build build/updater)"
+  echo "   (no updater app at $UPD_APP; packaging runtime only -- build it: shipyard-cmake --build \"\$SWRT_BUILD/build/updater\")"
 fi
 
 echo ">> flat component pkg (payload -> /usr/lib/swift, /usr/local, /Library/LaunchAgents)"

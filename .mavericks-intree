@@ -1,0 +1,2 @@
+VERSION    # release.yml stamps the resolved version here; shipyard's resolve-version.sh family contract (package.sh calls it) reads it back from $MAVERICKS_ROOT/VERSION
+UPSTREAM_VERSION    # scripts/derive-upstream-version.sh stamps the pinned SWIFT_VERSION here; the same family contract reads it back from $MAVERICKS_ROOT/UPSTREAM_VERSION
