@@ -1,6 +1,12 @@
+# Default build root is $MAVERICKS_BUILD_ROOT (outside the tree, see lib.sh); work/, out/, dist/,
+# gate-build/ and llvm-build/ (the latter two live under work/) are only the deliberate-in-tree
+# escape hatch (MAVERICKS_BUILD_ROOT="$PWD" sh build-llvm.sh ...). An LLVM build tree is enormous
+# and its CMakeCache bakes in absolute paths, so none of these survive being committed usefully.
 work/
 out/
 dist/
+gate-build/
+llvm-build/
 *.pkg
 *.tar.gz
 ._*
@@ -9,10 +15,3 @@ docs/
 .superpowers/
 /VERSION
 /UPSTREAM_VERSION
-
-# CMake build trees this repo writes INTO the checkout: build-llvm.sh configures `-B llvm-build`,
-# and the compat gate `-B gate-build`. An LLVM build tree is enormous and its CMakeCache bakes in
-# absolute paths, so neither survives being committed usefully -- and `work/ out/ dist/` above never
-# covered either of them.
-gate-build/
-llvm-build/

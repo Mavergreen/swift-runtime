@@ -1,0 +1,2 @@
+VERSION    # release.yml's "Resolve the version + decide whether this run publishes" step stamps the resolved version here; pins.env reads it back (via shipyard's resolve-version.sh, MAVERICKS_ROOT=$HERE) to derive BUILDSUPPORT_ASSET/TOOLCHAIN_ASSET
+UPSTREAM_VERSION    # scripts/derive-upstream-version.sh stamps the pinned SWIFT_VERSION here; pins.env's VERSION derivation reads it back the same way

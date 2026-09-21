@@ -64,6 +64,11 @@ jobs:
       - name: Record the pre-build tree
         run: sh "$SHIPYARD_SCRIPTS/assert-tree-clean.sh" --record
 
+      - name: Build out of tree
+        run: |
+          echo "MAVERICKS_BUILD_ROOT=$RUNNER_TEMP/mm-build" >> "$GITHUB_ENV"
+          echo "STC_BUILD=$RUNNER_TEMP/mm-build/swift-toolchain-build" >> "$GITHUB_ENV"
+
       # The version is DERIVED, so there is nothing for a tag to disagree with. What this replaces --
       # "tag must equal the committed VERSION" -- made every release a two-step ritual: edit VERSION,
       # commit to main, then tag. Bots cannot do the commit (branch protection requires a status check
@@ -127,9 +132,10 @@ jobs:
         if: steps.ver.outputs.publish == 'true'
         run: |
           set -eu
+          mkdir -p "$STC_BUILD/dist"
           sh "$SHIPYARD_SCRIPTS/release-notes.sh" \
             --tag "${{ steps.ver.outputs.version }}" --version "${{ steps.ver.outputs.version }}" \
-            --product 'Swift Toolchain' --out dist/RELEASE_NOTES.md
+            --product 'Swift Toolchain' --out "$STC_BUILD/dist/RELEASE_NOTES.md"
 
       # Conformance: do the artifacts about to be published agree with each other and with the
       # family's schemes? Gated on a tag, which is when this repo publishes -- a plain push builds
@@ -137,7 +143,7 @@ jobs:
       - name: Artifact conformance
         if: steps.ver.outputs.publish == 'true'
         run: |
-          sh "$SHIPYARD_SCRIPTS/artifact-facts.sh" dist "${{ steps.ver.outputs.version }}" \
+          sh "$SHIPYARD_SCRIPTS/artifact-facts.sh" "$STC_BUILD/dist" "${{ steps.ver.outputs.version }}" \
             | sh "$SHIPYARD_SCRIPTS/check-artifact-conformance.sh"
 
       - name: The build must not have written into the source tree
@@ -149,9 +155,9 @@ jobs:
         with:
           name: swift-toolchain
           path: |
-            dist/*.tar.gz
-            dist/*.pkg
-            dist/RELEASE_NOTES.md
+            ${{ env.STC_BUILD }}/dist/*.tar.gz
+            ${{ env.STC_BUILD }}/dist/*.pkg
+            ${{ env.STC_BUILD }}/dist/RELEASE_NOTES.md
 
   publish:
     needs: [build]

@@ -7,8 +7,8 @@ set -eu
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 . "$HERE/pins.env"
-. "$HERE/lib.sh"
-DIST="$HERE/dist"; mkdir -p "$DIST"
+. "$HERE/lib.sh"   # -> $STC_BUILD (out-of-tree build root)
+DIST="$STC_BUILD/dist"; mkdir -p "$DIST"
 PKG="$DIST/$TOOLCHAIN_ASSET"
 
 if [ ! -f "$PKG" ]; then

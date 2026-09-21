@@ -1,7 +1,15 @@
 #!/bin/sh
-# lib.sh — helpers shared by mirror-toolchain.sh and package.sh. Sourced after pins.env, which
-# supplies TOOLCHAIN_SIGNER. Kept here rather than copied into both scripts: two copies of a
-# verification routine is how one of them quietly stops matching the other.
+# lib.sh — helpers shared by build-llvm.sh, mirror-toolchain.sh, package.sh, and
+# verify-relocatable.sh. Sourced after pins.env, which supplies TOOLCHAIN_SIGNER. Kept here rather
+# than copied into each script: two copies of a verification routine (or a build-root default) is
+# how one of them quietly stops matching the other.
+
+# platform: a family checkout may live on NFS, where a build cost 11.16s wall / 25% CPU against
+#           2.96s / 88% on local disk with identical user time -- the whole difference is I/O wait.
+: "${MAVERICKS_BUILD_ROOT:=${TMPDIR:-/tmp}/mm-build}"
+# work/ (LLVM + the relocation gate's scratch), out/llvm (the relocatable install tree), and dist/
+# (staged release assets) all move under here -- none of the four scripts writes into $HERE any more.
+STC_BUILD="$MAVERICKS_BUILD_ROOT/swift-toolchain-build"
 
 # verify_toolchain_signature <pkg> -- fail closed unless the installer is signed by the pinned
 # identity. Replaces a per-version SHA256 pin: the identity holds across releases, so a Swift bump

@@ -10,16 +10,17 @@ set -eu
 HERE="$(cd "$(dirname "$0")" && pwd)"
 . "$HERE/pins.env"
 . "$HERE/msc.sh"   # -> $SHIPYARD (shipyard scripts dir)
+. "$HERE/lib.sh"    # -> $STC_BUILD (out-of-tree build root)
 # Same scratch override as build-llvm.sh. This gate does a full Swift stdlib build, so it
 # especially wants local disk when the repo is on slow storage. CI leaves this unset.
-ROOT="${SWIFT_TOOLCHAIN_WORK:-$HERE/work}"; mkdir -p "$ROOT"; cd "$ROOT"
+ROOT="${SWIFT_TOOLCHAIN_WORK:-$STC_BUILD/work}"; mkdir -p "$ROOT"; cd "$ROOT"
 DI="$(xcrun -f dyld_info)"
 
-[ -d "$HERE/out/llvm" ] || { echo "FAIL: run ./build-llvm.sh first"; exit 1; }
+[ -d "$STC_BUILD/out/llvm" ] || { echo "FAIL: run ./build-llvm.sh first"; exit 1; }
 
 echo "==> 1. toolchain (host swiftc/clang)"
 if [ ! -x toolchain/usr/bin/swiftc ]; then
-  PKG="$HERE/dist/$TOOLCHAIN_ASSET"
+  PKG="$STC_BUILD/dist/$TOOLCHAIN_ASSET"
   [ -f "$PKG" ] || { echo "FAIL: run ./mirror-toolchain.sh first (need $PKG)"; exit 1; }
   rm -rf tc-expand toolchain; mkdir -p toolchain
   pkgutil --expand "$PKG" tc-expand
@@ -36,7 +37,7 @@ test "$(git -C swift rev-parse HEAD)" = "$SWIFT_SHA" || {
 echo "==> 3. RELOCATE: unpack the SHIPPED TARBALL under a name that differs from the build location"
 # Deliberately extract dist/*.tar.gz, not out/llvm: the gate must test the bytes we publish,
 # not the directory they were staged from.
-TARBALL="$HERE/dist/$BUILDSUPPORT_ASSET"
+TARBALL="$STC_BUILD/dist/$BUILDSUPPORT_ASSET"
 [ -f "$TARBALL" ] || { echo "FAIL: run ./package.sh first (need $TARBALL)"; exit 1; }
 rm -rf gate-relocated gate-build
 mkdir -p gate-relocated

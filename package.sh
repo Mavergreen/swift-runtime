@@ -4,9 +4,9 @@ set -eu
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 . "$HERE/pins.env"
-. "$HERE/lib.sh"
-DIST="$HERE/dist"; mkdir -p "$DIST"
-[ -d "$HERE/out/llvm" ] || { echo "FAIL: run ./build-llvm.sh first"; exit 1; }
+. "$HERE/lib.sh"   # -> $STC_BUILD (out-of-tree build root)
+DIST="$STC_BUILD/dist"; mkdir -p "$DIST"
+[ -d "$STC_BUILD/out/llvm" ] || { echo "FAIL: run ./build-llvm.sh first"; exit 1; }
 
 TARBALL="$DIST/$BUILDSUPPORT_ASSET"
 PKG="$DIST/$TOOLCHAIN_ASSET"
@@ -26,7 +26,7 @@ rm -f "$TARBALL"
 # it. Traversal mode handles the sidecars correctly. Revisit in CI, where the filesystem has
 # no AppleDouble at all, and gate any change on BOTH the SHA being stable AND the size and
 # entry count being unchanged.
-tar -C "$HERE/out" -czf "$TARBALL" llvm
+tar -C "$STC_BUILD/out" -czf "$TARBALL" llvm
 
 echo "==> SHA256SUMS"
 ( cd "$DIST" && shasum -a 256 "$BUILDSUPPORT_ASSET" "$TOOLCHAIN_ASSET" > SHA256SUMS )
