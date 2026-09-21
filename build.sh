@@ -146,7 +146,7 @@ echo "==> 4. Swift STDLIB-ONLY configure (prebuilt toolchain as native tools)"
 # skipped under SWIFT_INCLUDE_TESTS=OFF / SWIFT_INCLUDE_TOOLS=OFF -- so no LLVM source is needed.
 # Clang_DIR, LLVM_TABLEGEN and CLANG_TABLEGEN are deliberately absent: CMake reports them
 # unused in this configuration, since the branch that would read them is behind SWIFT_INCLUDE_TOOLS.
-shipyard-cmake -G Ninja -S swift -B stdlib-build \
+shipyard-cmake -G Ninja -S swift -B "$ROOT/stdlib-build" \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_C_COMPILER="$TC/bin/clang" -DCMAKE_CXX_COMPILER="$TC/bin/clang++" \
   -DLLVM_DIR="$LLVMB/lib/cmake/llvm" \
@@ -169,14 +169,14 @@ shipyard-cmake -G Ninja -S swift -B stdlib-build \
   -DSWIFT_EXPERIMENTAL_EXTRA_FLAGS="-Xfrontend;-disable-availability-checking"
 
 echo "==> 5. build libswiftCore (+ SwiftOnoneSupport)"
-ninja -C stdlib-build swiftCore-macosx-$ARCH swiftSwiftOnoneSupport-macosx-$ARCH
+ninja -C "$ROOT/stdlib-build" swiftCore-macosx-$ARCH swiftSwiftOnoneSupport-macosx-$ARCH
 
 echo "==> 6. stage output (install layout: out/usr/lib/swift/ so package.sh's pkgbuild --root works)"
 REPO="$HERE"
 OUT="${SWIFT_RUNTIME_OUT:-$SWRT_BUILD/out}"; DEST="$OUT/usr/lib/swift"; mkdir -p "$DEST"
 CORE="$DEST/libswiftCore.dylib"
-cp stdlib-build/lib/swift/macosx/$ARCH/libswiftCore.dylib "$CORE"
-cp stdlib-build/lib/swift/macosx/$ARCH/libswiftSwiftOnoneSupport.dylib "$DEST/" 2>/dev/null || true
+cp "$ROOT/stdlib-build/lib/swift/macosx/$ARCH/libswiftCore.dylib" "$CORE"
+cp "$ROOT/stdlib-build/lib/swift/macosx/$ARCH/libswiftSwiftOnoneSupport.dylib" "$DEST/" 2>/dev/null || true
 # vendor the license into OUT so package.sh can show it at install time
 cp "$REPO/LICENSE" "$OUT/LICENSE.txt"
 
