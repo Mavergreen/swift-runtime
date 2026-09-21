@@ -61,6 +61,9 @@ jobs:
       - name: Install mavericks-shipyard
         uses: ModernMavericks/shipyard/.github/actions/install@v1
 
+      - name: Record the pre-build tree
+        run: sh "$SHIPYARD_SCRIPTS/assert-tree-clean.sh" --record
+
       # The version is DERIVED, so there is nothing for a tag to disagree with. What this replaces --
       # "tag must equal the committed VERSION" -- made every release a two-step ritual: edit VERSION,
       # commit to main, then tag. Bots cannot do the commit (branch protection requires a status check
@@ -136,6 +139,9 @@ jobs:
         run: |
           sh "$SHIPYARD_SCRIPTS/artifact-facts.sh" dist "${{ steps.ver.outputs.version }}" \
             | sh "$SHIPYARD_SCRIPTS/check-artifact-conformance.sh"
+
+      - name: The build must not have written into the source tree
+        run: sh "$SHIPYARD_SCRIPTS/assert-tree-clean.sh"
 
       # No SHA256SUMS in the artifact: publish-release.yml regenerates it over everything it attaches.
       - name: Upload artifacts
