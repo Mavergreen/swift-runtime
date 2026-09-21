@@ -67,6 +67,9 @@ jobs:
       - name: Install mavericks-shipyard
         uses: ModernMavericks/shipyard/.github/actions/install@v1
 
+      - name: Record the pre-build tree
+        run: sh "$SHIPYARD_SCRIPTS/assert-tree-clean.sh" --record
+
       # The shared runner takes the whole top-level suite, so a newly added test runs the day it
       # lands. run-selftest.sh needs the runtime installed on a real 10.9 box, so here it exits 77
       # and is reported SKIP rather than failing a run that was never going to have one.
@@ -180,6 +183,9 @@ jobs:
       # core .pkg, so it only "passed" where those were already installed -- a mirage. It returns
       # in a later release, rebuilt to match exactly what the .pkg ships. Acceptance for this
       # release is the manual real-10.9 validation (500/500 + Guard Malloc/Scribble).
+
+      - name: The build must not have written into the source tree
+        run: sh "$SHIPYARD_SCRIPTS/assert-tree-clean.sh"
 
       # Conformance: do the artifacts about to be published agree with each other and with the
       # family's schemes? Gated on a tag, which is when this repo publishes -- a plain push builds
