@@ -66,7 +66,20 @@ are deliberate, and scoped to the artifact they concern:
   repo exists to keep checkable.
 - floor:upstream-swift-*.pkg: upstream ships a 10.11 floor. We do not restamp a mirrored package.
 - identifier:upstream-swift-*.pkg: `org.swift.*` is upstream's identifier; claiming
-  `dev.modernmavericks.*` for bytes we did not build would be a lie.
+  `dev.mavergreen.*` for bytes we did not build would be a lie.
+- install-path:Library/Developer/Toolchains/swift-*.xctoolchain/*: upstream's pkg, verbatim, installs where Xcode finds toolchains.
+  It is its component's `install-location`, and where `xcrun --toolchain` looks; we do not relocate
+  bytes we mirror.
+- bundle-id:org.swift.*: upstream's own bundles, verbatim in upstream's pkg (sourcekitd, sourcekitdInProc, PlaygroundLogger).
+- bundle-id:com.apple.dt.*: PlaygroundSupport and XCPlayground frameworks, verbatim in upstream's pkg under Apple's ids.
+- bundle-id:com.apple.LLDB.framework: LLDB.framework, verbatim in upstream's pkg under Apple's id.
+- bundle-id:SwiftBuild.*: SwiftPM's SwiftBuild_*.bundle resource bundles, verbatim in upstream's pkg.
+- bundle-id:swift-crypto.*: SwiftPM's swift-crypto_*.bundle resource bundles, verbatim in upstream's pkg.
+
+The `install-path` and `bundle-id` entries were read from upstream's 6.3.3 package itself (its
+`PackageInfo`, `Distribution` and `Bom`, fetched by byte range rather than as the whole 1.4 GB); a
+Swift release that adds a bundle under a new identifier will fail conformance until it is declared
+here, which is the point.
 
 The build-support tarball this repo *does* build carries no such exemption, which is the point of
 scoping each deviation to a filename glob rather than to the check.
