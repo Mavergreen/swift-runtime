@@ -17,7 +17,7 @@ mavericks_resolve_version(MAVSWIFT_VERSION)
 mavericks_add_updater_app(
   NAME SwiftUpdater
   PRODUCT_NAME "Mavericks Swift Runtime"
-  BUNDLE_ID dev.modernmavericks.SwiftUpdater
+  BUNDLE_ID dev.mavergreen.SwiftUpdater
   FEED_URL "https://github.com/Mavergreen/swift-runtime/releases/latest/download/appcast.xml"
   ICON "${CMAKE_SOURCE_DIR}/updater/swift-runtime-updater.icns"
   VERSION "${MAVSWIFT_VERSION}"

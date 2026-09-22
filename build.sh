@@ -177,8 +177,13 @@ OUT="${SWIFT_RUNTIME_OUT:-$SWRT_BUILD/out}"; DEST="$OUT/usr/lib/swift"; mkdir -p
 CORE="$DEST/libswiftCore.dylib"
 cp "$ROOT/stdlib-build/lib/swift/macosx/$ARCH/libswiftCore.dylib" "$CORE"
 cp "$ROOT/stdlib-build/lib/swift/macosx/$ARCH/libswiftSwiftOnoneSupport.dylib" "$DEST/" 2>/dev/null || true
-# vendor the license into OUT so package.sh can show it at install time
-cp "$REPO/LICENSE" "$OUT/LICENSE.txt"
+# Vendor the license INTO the install layout: package.sh shows this copy at install time, and the
+# payload installs it beside the other family docs. It used to go to $OUT/LICENSE.txt, which
+# pkgbuild --root "$OUT" then shipped as /LICENSE.txt at the root of the user's disk. Drop that stale
+# copy too: $OUT persists between builds, and package.sh refuses a payload with files at its root.
+rm -f "$OUT/LICENSE.txt"
+DOC="$OUT/usr/local/share/doc/mavericks-swift-runtime"; mkdir -p "$DOC"
+cp "$REPO/LICENSE" "$DOC/LICENSE.txt"
 
 echo "==> 7. self pre-flight (must show minOS 10.9 and NO os_unfair_lock)"
 arch -x86_64 "$DI" -platform "$CORE" | sed -n '3,4p'

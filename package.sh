@@ -19,7 +19,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 [ -f "$HERE/UPSTREAM_VERSION" ] || sh "$HERE/scripts/derive-upstream-version.sh" >/dev/null
 . "$HERE/msc.sh"        # -> $SHIPYARD: resolve-version, stage_updater and set_install_floor
 VERSION="$(MAVERICKS_ROOT="$HERE" sh "$SHIPYARD/resolve-version.sh")"
-IDENTIFIER="${PKG_IDENTIFIER:-dev.modernmavericks.swift-runtime}"
+IDENTIFIER="${PKG_IDENTIFIER:-dev.mavergreen.swift-runtime}"
 NAME="swift-runtime-${VERSION}"
 mkdir -p "$DIST"
 [ -f "$OUT/usr/lib/swift/libswiftCore.dylib" ] || { echo "no build in $OUT; run build.sh" >&2; exit 1; }
@@ -27,20 +27,33 @@ mkdir -p "$DIST"
 echo ">> resources (welcome + license shown at install)"
 RES="$DIST/resources"; mkdir -p "$RES"
 cp scripts/resources/Welcome.html "$RES/"
-[ -f "$OUT/LICENSE.txt" ] && cp "$OUT/LICENSE.txt" "$RES/" || echo "   (no LICENSE.txt in OUT; build.sh should vendor it)"
+LICENSE_TXT="$OUT/usr/local/share/doc/mavericks-swift-runtime/LICENSE.txt"
+[ -f "$LICENSE_TXT" ] || { echo "no $LICENSE_TXT; run build.sh (it vendors the license)" >&2; exit 1; }
+cp "$LICENSE_TXT" "$RES/"
+
+# Nothing installs at the root of the disk. pkgbuild --root "$OUT" --install-location / ships every
+# file in $OUT, so a stray file here (the license once was) lands in / on every user's machine.
+stray="$(find "$OUT" -mindepth 1 -maxdepth 1 ! -type d)"
+[ -z "$stray" ] || { echo "files at the payload root would install into /: $stray" >&2; exit 1; }
+
+echo ">> preinstall (the flag-day migration), and the license it compares against"
+SCR="$DIST/pkg-scripts"; rm -rf "$SCR"; mkdir -p "$SCR"
+cp scripts/pkg/preinstall "$SCR/preinstall"; chmod +x "$SCR/preinstall"
+cp "$LICENSE_TXT" "$SCR/LICENSE.txt"
+set -- --scripts "$SCR"
 
 echo ">> stage updater app + LaunchAgent + postinstall into the payload (if built)"
 UPD_APP="${UPD_APP:-$SWRT_BUILD/build/updater/SwiftUpdater.app}"
-set --                                    # pkgbuild gets --scripts only when there IS a postinstall
+# Only this step puts anything under $OUT/Library, and $OUT persists between builds: clear it, or a
+# previous run's updater -- or one staged under an identity since renamed -- ships alongside this one.
+rm -rf "$OUT/Library"
 if [ -d "$UPD_APP" ]; then
-  SCR="$DIST/pkg-scripts"; rm -rf "$SCR"; mkdir -p "$SCR"
   sh "$SHIPYARD/stage_updater.sh" \
     --stage "$OUT" \
     --app "$UPD_APP" \
-    --app-dir "/Library/Application Support/ModernMavericks" \
-    --agent-label dev.modernmavericks.swift-updatecheck \
+    --app-dir "/Library/Application Support/Mavergreen" \
+    --agent-label dev.mavergreen.swift-updatecheck \
     --scripts-out "$SCR"
-  set -- --scripts "$SCR"
 else
   echo "   (no updater app at $UPD_APP; packaging runtime only -- build it: shipyard-cmake --build \"\$SWRT_BUILD/build/updater\")"
 fi
