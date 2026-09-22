@@ -13,13 +13,13 @@ set -eu
 
 # ---------------------------- PINNED INPUTS ----------------------------------
 # The host build environment (swiftlang LLVM build support + the swift.org toolchain) is built
-# and published by ModernMavericks/swift-toolchain. We fetch it by pinned URL + SHA256 rather
+# and published by Mavergreen/swift-toolchain. We fetch it by pinned URL + SHA256 rather
 # than building LLVM here. A CMake *build tree* bakes absolute paths into LLVMConfig.cmake at
 # configure time, so a build that reuses one is only correct while the checkout path never
 # moves -- and this repo's rename proved it does. The published tree is a CMake *install* tree,
 # which derives its prefix from its own location; nothing here depends on cache state.
-TOOLCHAIN_REPO="ModernMavericks/swift-toolchain"
-TOOLCHAIN_REF="6.3.3-mavericks.4"   # renovate: github-releases ModernMavericks/swift-toolchain
+TOOLCHAIN_REPO="Mavergreen/swift-toolchain"
+TOOLCHAIN_REF="6.3.3-mavericks.4"   # renovate: github-releases Mavergreen/swift-toolchain
 SWIFT_VERSION="6.3.3"   # renovate: swiftlang/swift
 SWIFT_SHA="064859e41d68596f486c5d724401cb370f260409"          # commit at SWIFT_TAG; Renovate moves it with SWIFT_VERSION
 # DERIVED from SWIFT_VERSION, never repeated: a Renovate bump rewrites one line, and a tag left

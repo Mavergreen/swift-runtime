@@ -5,9 +5,9 @@ Everything baked into the shipped runtime `.pkg`, and how a change to it reaches
 | Ingredient | Pinned in | Renovate | On a bump |
 |---|---|---|---|
 | Swift version (own upstream) | `SWIFT_VERSION` + `SWIFT_SHA` in `build.sh` | ✅ `github-tags` on `swiftlang/swift`; minor/major held for a human | auto-cuts `<upstream>-mavericks.1` on the push to main |
-| ModernMavericks swift-toolchain build environment | `TOOLCHAIN_REF` in `build.sh` | ✅ `github-releases` | auto-repackages `-mavericks.(N+1)` |
+| Mavergreen swift-toolchain build environment | `TOOLCHAIN_REF` in `build.sh` | ✅ `github-releases` | auto-repackages `-mavericks.(N+1)` |
 | Source patches (`patches/`) | this repo | n/a | auto-repackages `-mavericks.(N+1)`: they change what ships |
-| Sparkle framework, MacOSX10.9 SDK | `ModernMavericks/shipyard@v1` | ✅ github-actions manager tracks the tag | `@v1` is a moving tag; no path changes, so nothing auto-repackages |
+| Sparkle framework, MacOSX10.9 SDK | `Mavergreen/shipyard@v1` | ✅ github-actions manager tracks the tag | `@v1` is a moving tag; no path changes, so nothing auto-repackages |
 
 ## Why there are no pinned SHA256s here any more
 
