@@ -63,9 +63,9 @@ echo "==> 4. relocatability fixups"
 for f in "$OUT/lib/cmake/llvm/LLVMExports.cmake" "$OUT/lib/cmake/clang/ClangTargets.cmake"; do
   [ -f "$f" ] || continue
   /usr/bin/sed -i '' \
-    's|^# Loop over all imported files and verify that they actually exist|set(_cmake_import_check_targets "")  # ModernMavericks: no LLVM archives shipped (nothing links them)\n&|' \
+    's|^# Loop over all imported files and verify that they actually exist|set(_cmake_import_check_targets "")  # Mavergreen: no LLVM archives shipped (nothing links them)\n&|' \
     "$f"
-  grep -q 'ModernMavericks: no LLVM archives shipped' "$f" || {
+  grep -q 'Mavergreen: no LLVM archives shipped' "$f" || {
     echo "FAIL: import-check neutralization did not apply to $f"; exit 1; }
 done
 # (b) LLVM_DEFAULT_EXTERNAL_LIT is the one remaining absolute build path. lit is unused

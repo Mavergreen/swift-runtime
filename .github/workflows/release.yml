@@ -1,6 +1,6 @@
 name: release
 
-# Build the pinned host build environment for ModernMavericks/swift-runtime and publish it as
+# Build the pinned host build environment for Mavergreen/swift-runtime and publish it as
 # relocatable, SHA-verified release assets.
 #
 # The gate (verify-relocatable.sh) unpacks the SHIPPED TARBALL into a directory other than the
@@ -59,7 +59,7 @@ jobs:
       # and Artifact conformance uses $SHIPYARD_SCRIPTS -- both need shipyard installed here (the action
       # exports $SHIPYARD_SCRIPTS for every later step).
       - name: Install mavericks-shipyard
-        uses: ModernMavericks/shipyard/.github/actions/install@v1
+        uses: Mavergreen/shipyard/.github/actions/install@v1
 
       - name: Record the pre-build tree
         run: sh "$SHIPYARD_SCRIPTS/assert-tree-clean.sh" --record
@@ -164,7 +164,7 @@ jobs:
     if: needs.build.outputs.publish == 'true'
     permissions:
       contents: write
-    uses: ModernMavericks/shipyard/.github/workflows/publish-release.yml@v1
+    uses: Mavergreen/shipyard/.github/workflows/publish-release.yml@v1
     with:
       version: ${{ needs.build.outputs.version }}
       artifact: swift-toolchain

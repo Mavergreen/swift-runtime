@@ -4,7 +4,7 @@ Everything baked into what this repo publishes, and how a change to it reaches a
 *ingredient* is an input to the product; the *own upstream* is the thing this repo exists to port.
 
 This repo is unusual in the family twice over: it publishes a **build environment** for
-`ModernMavericks/swift-runtime` rather than an end-user `.pkg`, and it consumes **none** of
+`Mavergreen/swift-runtime` rather than an end-user `.pkg`, and it consumes **none** of
 shipyard's CMake *modules* — no `CMakeLists.txt` of its own, no `find_package(MavericksShipyard)`,
 no updater, no `.pkg`, no 10.9 install floor, so nothing to stage or sign. It does build and gate
 with **`shipyard-cmake`**: the `lib/cmake/llvm/*.cmake` files inside the shipped tarball are the
@@ -54,7 +54,7 @@ exists.
 
 The pins above are all *own upstream* (the Swift release and the LLVM commit coupled to it), which is
 the `-mavericks.1` path, not a repackage. There is no foreign ingredient to watch — this repo consumes
-no other ModernMavericks product. Add a caller the day one lands, with `own-upstream-paths: pins.env`.
+no other Mavergreen product. Add a caller the day one lands, with `own-upstream-paths: pins.env`.
 
 ## Conformance deviations
 

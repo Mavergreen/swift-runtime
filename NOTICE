@@ -1,4 +1,4 @@
-ModernMavericks/swift-toolchain
+Mavergreen/swift-toolchain
 
 This repository builds and republishes host build tooling for constructing a
 Swift runtime targeting Mac OS X 10.9. It ships two kinds of artifact:

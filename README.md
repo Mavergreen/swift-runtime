@@ -1,6 +1,6 @@
 # swift-toolchain
 
-Host build environment for [ModernMavericks/swift-runtime](https://github.com/ModernMavericks/swift-runtime).
+Host build environment for [Mavergreen/swift-runtime](https://github.com/Mavergreen/swift-runtime).
 
 `swift`'s runtime is built from source against a pinned swiftlang LLVM. Building that LLVM
 inside the consumer's CI was slow (~8 min), cache-dependent, and — because a CMake *build tree*
