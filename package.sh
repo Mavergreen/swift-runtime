@@ -36,24 +36,21 @@ cp "$LICENSE_TXT" "$RES/"
 stray="$(find "$OUT" -mindepth 1 -maxdepth 1 ! -type d)"
 [ -z "$stray" ] || { echo "files at the payload root would install into /: $stray" >&2; exit 1; }
 
-echo ">> preinstall (the flag-day migration), and the license it compares against"
-SCR="$DIST/pkg-scripts"; rm -rf "$SCR"; mkdir -p "$SCR"
-cp scripts/pkg/preinstall "$SCR/preinstall"; chmod +x "$SCR/preinstall"
-cp "$LICENSE_TXT" "$SCR/LICENSE.txt"
-set -- --scripts "$SCR"
-
 echo ">> stage updater app + LaunchAgent + postinstall into the payload (if built)"
 UPD_APP="${UPD_APP:-$SWRT_BUILD/build/updater/SwiftUpdater.app}"
 # Only this step puts anything under $OUT/Library, and $OUT persists between builds: clear it, or a
-# previous run's updater -- or one staged under an identity since renamed -- ships alongside this one.
+# previous run's updater ships alongside this one.
 rm -rf "$OUT/Library"
+set --
 if [ -d "$UPD_APP" ]; then
+  SCR="$DIST/pkg-scripts"; rm -rf "$SCR"; mkdir -p "$SCR"
   sh "$SHIPYARD/stage_updater.sh" \
     --stage "$OUT" \
     --app "$UPD_APP" \
     --app-dir "/Library/Application Support/Mavergreen" \
     --agent-label dev.mavergreen.swift-updatecheck \
     --scripts-out "$SCR"
+  set -- --scripts "$SCR"
 else
   echo "   (no updater app at $UPD_APP; packaging runtime only -- build it: shipyard-cmake --build \"\$SWRT_BUILD/build/updater\")"
 fi
