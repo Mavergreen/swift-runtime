@@ -44,7 +44,7 @@
       "automerge": true
     },
     {
-      "description": "EXCEPTION to the family ship-if-green default. A MINOR or MAJOR Swift bump is not self-contained: LLVM_BRANCH is swift/release/<minor> and must follow, which no regex here can infer. Left alone it builds Swift <new> against the <old> LLVM build support -- it would BUILD FINE AND BE WRONG, which is exactly what a green build cannot catch. Needs a human.",
+      "description": "EXCEPTION to the family ship-if-green default. A MINOR or MAJOR Swift bump is not self-contained: LLVM_BRANCH must move to the llvm-project branch cut for the new release (swift/release/<minor> through 6.3, swift/release/<X.Y.Z> from 6.4), which no regex here can infer. Left alone it builds Swift <new> against the <old> LLVM build support -- it would BUILD FINE AND BE WRONG, which is exactly what a green build cannot catch. Needs a human.",
       "matchDepNames": [
         "swiftlang/swift"
       ],

@@ -16,7 +16,7 @@ conventions.
 | Ingredient | Pinned in | Renovate | On a bump |
 |---|---|---|---|
 | Swift release (own upstream) | `SWIFT_VERSION` + `SWIFT_SHA` in `pins.env` | ✅ `github-tags` on `swiftlang/swift`, **patch automerged** | auto-cuts `<upstream>-mavericks.1` on the push to main (no tag to push by hand) |
-| swiftlang/llvm-project commit | `LLVM_BRANCH` + `LLVM_SHA` in `pins.env` | ✅ `git-refs` | auto-repackages `-mavericks.(N+1)`; `LLVM_BRANCH` is `swift/release/<minor>` and must follow a minor Swift bump |
+| swiftlang/llvm-project commit | `LLVM_BRANCH` + `LLVM_SHA` in `pins.env` | ✅ `git-refs` | auto-repackages `-mavericks.(N+1)`; `LLVM_BRANCH` is the branch whose tip is llvm-project's `swift-<SWIFT_VERSION>-RELEASE` tag, and must follow a Swift bump — `swift/release/<minor>` through 6.3, one branch per release (`swift/release/6.4.0`, `6.4.1`, …) from 6.4 |
 | swift.org toolchain `.pkg` | `TOOLCHAIN_URL`, derived from `SWIFT_VERSION` | ✅ moves with the Swift pin | verified by **signer identity**, not a hash — see below |
 
 Not ingredients: the build scripts are this repo's recipe; a change there is a repackage you cut
@@ -62,7 +62,7 @@ no other Mavergreen product. Add a caller the day one lands, with `own-upstream-
 are deliberate, and scoped to the artifact they concern:
 
 - version:upstream-swift-*.pkg: mirrored verbatim from swift.org, so its version is upstream's own
-  (`6.3.3.20260625101`). Rewriting it would break the correspondence with download.swift.org that this
+  (`6.4.20260913101` for 6.4.0). Rewriting it would break the correspondence with download.swift.org that this
   repo exists to keep checkable.
 - floor:upstream-swift-*.pkg: upstream ships a 10.11 floor. We do not restamp a mirrored package.
 - identifier:upstream-swift-*.pkg: `org.swift.*` is upstream's identifier; claiming
@@ -73,11 +73,13 @@ are deliberate, and scoped to the artifact they concern:
 - bundle-id:org.swift.*: upstream's own bundles, verbatim in upstream's pkg (sourcekitd, sourcekitdInProc, PlaygroundLogger).
 - bundle-id:com.apple.dt.*: PlaygroundSupport and XCPlayground frameworks, verbatim in upstream's pkg under Apple's ids.
 - bundle-id:com.apple.LLDB.framework: LLDB.framework, verbatim in upstream's pkg under Apple's id.
-- bundle-id:SwiftBuild.*: SwiftPM's SwiftBuild_*.bundle resource bundles, verbatim in upstream's pkg.
+- bundle-id:swift-build.*: SwiftPM's SwiftBuild_*.bundle resource bundles, verbatim in upstream's pkg (6.4 renamed their ids from `SwiftBuild.*`).
+- bundle-id:swiftpm.*: SwiftPM's own SwiftPM_*.bundle resource bundles (SBOMModel), verbatim in upstream's pkg.
 - bundle-id:swift-crypto.*: SwiftPM's swift-crypto_*.bundle resource bundles, verbatim in upstream's pkg.
 
 The `install-path` and `bundle-id` entries were read from upstream's 6.3.3 package itself (its
-`PackageInfo`, `Distribution` and `Bom`, fetched by byte range rather than as the whole 1.4 GB); a
+`PackageInfo`, `Distribution` and `Bom`, fetched by byte range rather than as the whole 1.4 GB), and
+re-read from 6.4.0's with `artifact-facts.sh` when that release renamed and added bundles; a
 Swift release that adds a bundle under a new identifier will fail conformance until it is declared
 here, which is the point.
 
