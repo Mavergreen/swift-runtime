@@ -17,13 +17,24 @@ ROOT="${SWIFT_TOOLCHAIN_WORK:-$STC_BUILD/work}"; mkdir -p "$ROOT"; cd "$ROOT"
 OUT="$STC_BUILD/out/llvm"
 
 echo "==> 1. pinned llvm-project source (fetched BY SHA via shared clone_pinned.sh)"
-# clone_pinned fetches the pinned commit DIRECTLY (not a branch tip): the moment swiftlang advances
-# swift/release/6.3, a --branch clone stops containing $LLVM_SHA and this repo can never build again.
+# LLVM build support cut for any other Swift release than SWIFT_VERSION builds fine and is wrong,
+# which no later gate can see -- so refuse it here, before anything is fetched or built.
+[ "$LLVM_SWIFT_RELEASE" = "$SWIFT_VERSION" ] || {
+  echo "FAIL: LLVM is pinned at $LLVM_TAG, but SWIFT_VERSION is $SWIFT_VERSION"
+  echo "      move LLVM_SWIFT_RELEASE and LLVM_SHA in pins.env to llvm-project's $SWIFT_TAG"; exit 1; }
+# platform: git ls-remote lists an annotated tag twice, the tag object and then its peeled commit
+#           (refs/tags/T^{}); only the peeled one is comparable with a commit SHA.
+LLVM_TAG_SHA="$(git ls-remote https://github.com/swiftlang/llvm-project.git "refs/tags/$LLVM_TAG" "refs/tags/$LLVM_TAG^{}" \
+  | awk -v t="refs/tags/$LLVM_TAG" '{ sha[$2] = $1 } END { if ((t "^{}") in sha) print sha[t "^{}"]; else print sha[t] }')"
+[ -n "$LLVM_TAG_SHA" ] || { echo "FAIL: llvm-project has no tag $LLVM_TAG"; exit 1; }
+[ "$LLVM_TAG_SHA" = "$LLVM_SHA" ] || {
+  echo "FAIL: LLVM_SHA is $LLVM_SHA, but llvm-project's $LLVM_TAG is $LLVM_TAG_SHA"; exit 1; }
+# clone_pinned fetches the pinned commit DIRECTLY, so where a branch or tag moves later never matters.
 # Guard on llvm/ existing, not on .git -- an interrupted checkout leaves a .git whose HEAD passes the
 # SHA test while the worktree is empty (cmake then dies confusingly), so re-fetch from scratch then.
 if [ ! -d llvm-project/llvm ]; then
   rm -rf llvm-project
-  sh "$SHIPYARD/clone_pinned.sh" https://github.com/swiftlang/llvm-project.git "$LLVM_BRANCH" "$LLVM_SHA" llvm-project
+  sh "$SHIPYARD/clone_pinned.sh" https://github.com/swiftlang/llvm-project.git "$LLVM_TAG" "$LLVM_SHA" llvm-project
 fi
 test "$(git -C llvm-project rev-parse HEAD)" = "$LLVM_SHA" || {
   echo "FAIL: llvm-project SHA mismatch (want $LLVM_SHA)"; exit 1; }

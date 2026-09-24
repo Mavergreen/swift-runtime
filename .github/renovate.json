@@ -19,40 +19,28 @@
       "extractVersionTemplate": "^swift-(?<version>.+)-RELEASE$"
     },
     {
-      "description": "The swiftlang/llvm-project commit the build support is cut from. Branch and digest captured together so the branch stays authoritative in pins.env rather than duplicated here.",
+      "description": "The swiftlang/llvm-project commit the build support is cut from. llvm-project tags every Swift release swift-X.Y.Z-RELEASE, exactly as swiftlang/swift does, so this tracks that tag the same way the Swift pin is tracked: version and commit in ONE regex, moved together. The version is LLVM_SWIFT_RELEASE rather than SWIFT_VERSION only because two managers capturing the same literal would both rewrite it; build-llvm.sh fails unless the two are equal and LLVM_SHA is the commit at the tag. This replaced a git-refs manager on a branch pin, which Renovate could only move within one branch -- never to the next release's.",
       "customType": "regex",
       "managerFilePatterns": [
         "/^pins\\.env$/"
       ],
       "matchStrings": [
-        "LLVM_BRANCH=\"(?<currentValue>[^\"]+)\"[\\s\\S]*?LLVM_SHA=\"(?<currentDigest>[0-9a-f]{40})\""
+        "LLVM_SWIFT_RELEASE=\"(?<currentValue>[^\"]+)\"[\\s\\S]*?LLVM_SHA=\"(?<currentDigest>[0-9a-f]{40})\""
       ],
       "depNameTemplate": "swiftlang/llvm-project",
-      "packageNameTemplate": "https://github.com/swiftlang/llvm-project",
-      "datasourceTemplate": "git-refs"
+      "packageNameTemplate": "swiftlang/llvm-project",
+      "datasourceTemplate": "github-tags",
+      "extractVersionTemplate": "^swift-(?<version>.+)-RELEASE$"
     }
   ],
   "packageRules": [
     {
-      "description": "A PATCH Swift bump is self-contained: the tag and download URL derive from SWIFT_VERSION, SWIFT_SHA moves with it, and the .pkg is verified by signer identity. Takes the family default (ship-if-green).",
+      "description": "ONE PR per Swift release, moving the Swift pin and the llvm-project pin together. Apart, each PR fails build-llvm.sh's check that both name the same release, so neither could ever merge. Together they build and ship -- patch, minor or major, the family default -- because the one thing a green build used to miss here, Swift built against another release's LLVM, now fails the build instead of passing it.",
       "matchDepNames": [
-        "swiftlang/swift"
+        "swiftlang/swift",
+        "swiftlang/llvm-project"
       ],
-      "matchUpdateTypes": [
-        "patch"
-      ],
-      "automerge": true
-    },
-    {
-      "description": "EXCEPTION to the family ship-if-green default. A MINOR or MAJOR Swift bump is not self-contained: LLVM_BRANCH must move to the llvm-project branch cut for the new release (swift/release/<minor> through 6.3, swift/release/<X.Y.Z> from 6.4), which no regex here can infer. Left alone it builds Swift <new> against the <old> LLVM build support -- it would BUILD FINE AND BE WRONG, which is exactly what a green build cannot catch. Needs a human.",
-      "matchDepNames": [
-        "swiftlang/swift"
-      ],
-      "matchUpdateTypes": [
-        "minor",
-        "major"
-      ],
-      "automerge": false
+      "groupName": "Swift release"
     }
   ]
 }

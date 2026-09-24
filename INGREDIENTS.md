@@ -15,8 +15,8 @@ conventions.
 
 | Ingredient | Pinned in | Renovate | On a bump |
 |---|---|---|---|
-| Swift release (own upstream) | `SWIFT_VERSION` + `SWIFT_SHA` in `pins.env` | ✅ `github-tags` on `swiftlang/swift`, **patch automerged** | auto-cuts `<upstream>-mavericks.1` on the push to main (no tag to push by hand) |
-| swiftlang/llvm-project commit | `LLVM_BRANCH` + `LLVM_SHA` in `pins.env` | ✅ `git-refs` | auto-repackages `-mavericks.(N+1)`; `LLVM_BRANCH` is the branch whose tip is llvm-project's `swift-<SWIFT_VERSION>-RELEASE` tag, and must follow a Swift bump — `swift/release/<minor>` through 6.3, one branch per release (`swift/release/6.4.0`, `6.4.1`, …) from 6.4 |
+| Swift release (own upstream) | `SWIFT_VERSION` + `SWIFT_SHA` in `pins.env` | ✅ `github-tags` on `swiftlang/swift`, grouped with llvm-project into one "Swift release" PR, ship-if-green | auto-cuts `<upstream>-mavericks.1` on the push to main (no tag to push by hand) |
+| swiftlang/llvm-project commit | `LLVM_SWIFT_RELEASE` + `LLVM_SHA` in `pins.env` | ✅ `github-tags` on `swiftlang/llvm-project`, in the same "Swift release" PR | moves only WITH the Swift pin: `build-llvm.sh` fails unless `LLVM_SWIFT_RELEASE` equals `SWIFT_VERSION` and `LLVM_SHA` is llvm-project's `swift-<SWIFT_VERSION>-RELEASE` |
 | swift.org toolchain `.pkg` | `TOOLCHAIN_URL`, derived from `SWIFT_VERSION` | ✅ moves with the Swift pin | verified by **signer identity**, not a hash — see below |
 
 Not ingredients: the build scripts are this repo's recipe; a change there is a repackage you cut
@@ -40,7 +40,25 @@ push, once from the dispatched repackage.
 
 `SWIFT_VERSION` and `SWIFT_SHA` are matched by a single `matchStrings` so Renovate moves them together.
 `verify-relocatable.sh` asserts the clone of `SWIFT_TAG` is exactly `SWIFT_SHA`, so a version bumped
-without its commit **fails closed** rather than silently building something else.
+without its commit **fails closed** rather than silently building something else. `LLVM_SWIFT_RELEASE`
+and `LLVM_SHA` are captured the same way, for the same reason.
+
+## Why LLVM is pinned by release tag, and checked against the Swift pin
+
+LLVM build support cut for one Swift release and used for another **builds fine and is wrong** — the
+one failure a green build cannot catch. It used to be a branch pin (`swift/release/<minor>`) tracked
+by `git-refs`, which can only follow the tip of the branch it names: through 6.3 that happened to
+cover every patch release, but from 6.4 swiftlang cuts a branch per release (`swift/release/6.4.0`,
+`6.4.1`, …), so a Swift patch bump would have automerged against the previous release's LLVM.
+
+llvm-project tags every Swift release with the same `swift-X.Y.Z-RELEASE` name swiftlang/swift uses
+(all 18 Swift 6 releases, checked 2026-09-24), so LLVM is now pinned by that tag. Its release is its
+own literal, `LLVM_SWIFT_RELEASE`, rather than derived from `SWIFT_VERSION` — a deliberate repeat,
+because Renovate needs a value of its own to move `LLVM_SHA` by, and two managers capturing one
+literal would both rewrite it. The repeat cannot drift silently: `build-llvm.sh` refuses to start
+unless the two are equal and `LLVM_SHA` is the commit llvm-project's tag names. The two pins are
+grouped into one Renovate PR; apart, each would fail that check and neither could merge. With a
+mismatch unbuildable, a minor Swift bump needs no human either: it builds and ships like a patch.
 
 ## Why the toolchain is verified by signature, not a pinned hash
 
