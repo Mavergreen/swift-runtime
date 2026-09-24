@@ -14,8 +14,8 @@ Swift runtime without attaching the Apache 2.0 attribution requirements to
 programs that link against it.
 
 WHAT IS AND ISN'T REDISTRIBUTED HERE
-  * The shipped libswiftCore.dylib is compiled from unmodified Swift 6.3.3
-    sources PLUS the local patches in ./patches (see MANIFEST).
+  * The shipped libswiftCore.dylib is compiled from unmodified Swift
+    sources (the release pinned in build.sh) PLUS the local patches in ./patches.
   * NO Apple prebuilt binaries are redistributed. The swift.org toolchain and
     the macOS SDK are used only as *build inputs* on the builder's machine;
     none of their bytes are included in this artifact.
@@ -35,6 +35,9 @@ runtime work on 10.9's objc4-532, all gated to the 10.9/10.10 code path:
   0005  objc-super instance-size fix — size subclasses from
         class_getInstanceSize(super) on 10.9, where objc4-532 drops the Swift
         is-swift bit and the default path under-sizes them.
+  0007  is-swift mask legacy bit — tag and check the legacy is-swift bit
+        (value 1) on sub-10.14.4 targets, matching what the compiler emits
+        for them; the root cause 0005 works around.
 
 Build configuration (threading package = pthreads, deployment target = 10.9,
 availability flag) is recorded in MANIFEST and build.sh.

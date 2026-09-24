@@ -2,7 +2,7 @@
 # build.sh — reproducible from-source build of libswiftCore for macOS 10.9 / x86_64.
 #
 # Produces: out/libswiftCore.dylib (+ libswiftSwiftOnoneSupport.dylib), minOS 10.9,
-# from Swift 6.3.3 swift.org sources, with NO Apple prebuilt runtime bytes redistributed.
+# from the pinned Swift release's swift.org sources, with NO Apple prebuilt runtime bytes redistributed.
 #
 # Host: macOS with Xcode Command Line Tools (full Xcode NOT required), ninja + git, and the
 # shipyard pkg (it provides shipyard-cmake, the only cmake this family configures with).
@@ -19,9 +19,9 @@ set -eu
 # moves -- and this repo's rename proved it does. The published tree is a CMake *install* tree,
 # which derives its prefix from its own location; nothing here depends on cache state.
 TOOLCHAIN_REPO="Mavergreen/swift-toolchain"
-TOOLCHAIN_REF="6.3.3-mavericks.4"   # renovate: github-releases Mavergreen/swift-toolchain
-SWIFT_VERSION="6.3.3"   # renovate: swiftlang/swift
-SWIFT_SHA="064859e41d68596f486c5d724401cb370f260409"          # commit at SWIFT_TAG; Renovate moves it with SWIFT_VERSION
+TOOLCHAIN_REF="6.4.0-mavericks.1"   # renovate: github-releases Mavergreen/swift-toolchain
+SWIFT_VERSION="6.4.0"   # renovate: swiftlang/swift
+SWIFT_SHA="b8189d766d86ad7fc8106787d6ce9e402f38dd72"          # commit at SWIFT_TAG; Renovate moves it with SWIFT_VERSION
 # DERIVED from SWIFT_VERSION, never repeated: a Renovate bump rewrites one line, and a tag left
 # behind would clone a different Swift than SWIFT_SHA names. (swift-toolchain's pins.env learned this
 # the same way -- it used to repeat the version four times.)

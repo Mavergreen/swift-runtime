@@ -2,7 +2,7 @@
 
 A **Swift runtime built from source for OS X 10.9 "Mavericks"** (Intel x86_64).
 
-Modern Swift (6.3.x) assumes an Objective-C runtime and Swift ABI machinery that first shipped in
+Modern Swift (6.x) assumes an Objective-C runtime and Swift ABI machinery that first shipped in
 macOS 10.14.4. `mavericks-swift` builds `libswiftCore` from unmodified
 [swiftlang/swift](https://github.com/swiftlang/swift) sources with a **10.9 deployment target**,
 plus a small set of source patches that make Swift's class-realization path work on 10.9's
