@@ -186,12 +186,20 @@ DOC="$OUT/usr/local/share/doc/mavericks-swift-runtime"; mkdir -p "$DOC"
 cp "$REPO/LICENSE" "$DOC/LICENSE.txt"
 
 echo "==> 7. self pre-flight (must show minOS 10.9 and NO os_unfair_lock)"
-arch -x86_64 "$DI" -platform "$CORE" | sed -n '3,4p'
-if arch -x86_64 "$DI" -imports "$CORE" | grep -q 'os_unfair_lock'; then
+# platform: dyld_info reads an x86_64 Mach-O natively on an arm64 host. `arch -x86_64 dyld_info`
+#           needs Rosetta AND an x86_64 slice in dyld_info, and Command Line Tools 27 ships it arm64-only.
+# Captured before any grep: piped straight into grep, a dyld_info that could not run read as "no
+# os_unfair_lock, no hard objc_readClassPair" and this step printed OK having checked nothing.
+PLATFORM_OUT="$("$DI" -platform "$CORE")"
+IMPORTS_OUT="$("$DI" -imports "$CORE")"
+printf '%s\n' "$PLATFORM_OUT" | sed -n '3,4p'
+MINOS="$(printf '%s\n' "$PLATFORM_OUT" | awk 'NR==4{print $2}')"
+[ "$MINOS" = "$DEPLOYMENT" ] || { echo "FAIL: built runtime is minOS '$MINOS', not $DEPLOYMENT"; exit 1; }
+if printf '%s\n' "$IMPORTS_OUT" | grep -q 'os_unfair_lock'; then
   echo "FAIL: os_unfair_lock still imported"; exit 1
 fi
 # objc_readClassPair must be present only as a *weak* import (guarded), never hard.
-if arch -x86_64 "$DI" -imports "$CORE" | grep 'objc_readClassPair' | grep -qv '\[weak-import\]'; then
+if printf '%s\n' "$IMPORTS_OUT" | grep 'objc_readClassPair' | grep -qv '\[weak-import\]'; then
   echo "FAIL: objc_readClassPair is a HARD import"; exit 1
 fi
 # release build must carry no debug-logging leftovers.
