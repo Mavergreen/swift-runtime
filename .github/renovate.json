@@ -35,7 +35,15 @@
   ],
   "packageRules": [
     {
-      "description": "EXCEPTION to the family ship-if-green default. A MINOR or MAJOR Swift bump is not self-contained here: TOOLCHAIN_REF must move to a swift-toolchain release built for that Swift, which no regex can infer. The six source patches are cut against specific stdlib and runtime internals, so a bump that happens to build proves nothing about the 10.9 behaviour a macOS 26 runner cannot see. Needs a human. A PATCH bump takes the family default.",
+      "description": "ONE PR per Swift release, moving the Swift pin and TOOLCHAIN_REF together. build.sh fetches upstream-swift-<SWIFT_VERSION>-RELEASE-osx.pkg from the TOOLCHAIN_REF release, so either pin moved alone fails the build and its PR could never merge -- a Swift patch bump would sit red beside the swift-toolchain bump that fixes it. A swift-toolchain repackage (the same Swift, -mavericks.N+1) still arrives alone in this group and takes the family default.",
+      "matchDepNames": [
+        "swiftlang/swift",
+        "Mavergreen/swift-toolchain"
+      ],
+      "groupName": "Swift release"
+    },
+    {
+      "description": "EXCEPTION to the family ship-if-green default. A MINOR or MAJOR Swift bump is held: the six source patches are cut against specific stdlib and runtime internals, so a bump that happens to build proves nothing about the 10.9 behaviour a macOS 26 runner cannot see. Needs a human. A PATCH bump takes the family default.",
       "matchDepNames": [
         "swiftlang/swift"
       ],
