@@ -1,49 +1,75 @@
 #!/bin/sh
-# mavericks-swift self-test — validate the INSTALLED Swift runtime on THIS Mac (OS X 10.9).
-#
-# Requires the runtime installed first:  sudo installer -pkg mavericks-swift-*.pkg -target /
-# Then:   ./run-selftest.sh          quick pass/fail of every bundled test
-#         ./run-selftest.sh --gate   the full acceptance bar: 100x each + Guard Malloc
-#
-# The tests link the runtime at /usr/lib/swift (absolute rpath), so they exercise the
-# EXACT copy the .pkg installed — this tells you it works on your hardware, not ours.
+#   usage: run-selftest.sh [--gate]
+#          Validates the Swift runtime INSTALLED on this Mac (OS X 10.9) by running every bin/* test,
+#          which were built with an rpath of $SWIFT_RUNTIME_PREFIX/lib/swift (make-selftest.sh).
+#            (default)  each test once
+#            --gate     the acceptance bar: SELFTEST_RUNS consecutive clean exits (default 500),
+#                       then 10 runs under Guard Malloc + MallocScribble + MallocGuardEdges
+#          SWIFT_RUNTIME_PREFIX  default /usr/local/mavergreen-swift-runtime; must match the rpath the
+#                                tests were built with
+#          SELFTEST_GMALLOC      default /usr/lib/libgmalloc.dylib
+#          Exit 0 all pass, 1 any failure, 77 no runtime installed (the family SKIP code: a CI runner
+#          never has one).
 set -eu
 cd "$(dirname "$0")"
 
-CORE=/usr/lib/swift/libswiftCore.dylib
+PREFIX="${SWIFT_RUNTIME_PREFIX:-/usr/local/mavergreen-swift-runtime}"
+CORE="$PREFIX/lib/swift/libswiftCore.dylib"
+GMALLOC="${SELFTEST_GMALLOC:-/usr/lib/libgmalloc.dylib}"
+RUNS="${SELFTEST_RUNS:-500}"
+GMALLOC_RUNS=10
+
 [ -f "$CORE" ] || {
-  echo "mavericks-swift runtime not found at $CORE" >&2
-  echo "Install it first:  sudo installer -pkg mavericks-swift-*.pkg -target /" >&2
-  # 77 = SKIP, the family convention (shipyard's run-repo-tests.sh, and ctest's
-  # SKIP_RETURN_CODE): this needs the runtime installed on a real 10.9 box. A CI runner was never
-  # going to have one, so this is "not applicable here", not a failure.
+  echo "Swift runtime not found at $CORE" >&2
+  echo "Install it first:  sudo installer -pkg swift-runtime-*.pkg -target /" >&2
   exit 77
 }
+case "$RUNS" in
+  ''|*[!0-9]*|0) echo "SELFTEST_RUNS must be a positive integer (got '$RUNS')" >&2; exit 1 ;;
+esac
 
 MODE="${1:-quick}"
 pass=0; fail=0; failed=""
 for t in bin/*; do
-  [ -x "$t" ] || continue
-  name=$(basename "$t")
-  ok=1
+  [ -f "$t" ] && [ -x "$t" ] || continue
+  name="$(basename "$t")"; ok=1; why=""
   if [ "$MODE" = "--gate" ]; then
-    n=0; while [ $n -lt 100 ]; do "./$t" >/dev/null 2>&1 || { ok=0; break; }; n=$((n+1)); done
-    [ $ok = 1 ] && { DYLD_INSERT_LIBRARIES=/usr/lib/libgmalloc.dylib "./$t" >/dev/null 2>&1 || ok=0; }
-    label="100x+gmalloc"
+    n=0
+    while [ "$n" -lt "$RUNS" ]; do
+      "./$t" >/dev/null 2>&1 || { ok=0; why="run $((n + 1)) of $RUNS exited non-zero"; break; }
+      n=$((n + 1))
+    done
+    g=0
+    while [ "$ok" = 1 ] && [ "$g" -lt "$GMALLOC_RUNS" ]; do
+      # libgmalloc announces itself on stderr ("GuardMalloc[pid]: ...") on 10.9 and on modern macOS
+      # alike; its absence means the run was not guarded, which must not read as a pass.
+      err="$(DYLD_INSERT_LIBRARIES="$GMALLOC" MallocScribble=1 MallocGuardEdges=1 "./$t" 2>&1 >/dev/null)" \
+        || { ok=0; why="Guard Malloc run $((g + 1)) of $GMALLOC_RUNS exited non-zero"; break; }
+      case "$err" in
+        *'GuardMalloc['*) ;;
+        *) ok=0; why="Guard Malloc did not load ($GMALLOC)"; break ;;
+      esac
+      g=$((g + 1))
+    done
+    label="${RUNS}x + ${GMALLOC_RUNS}x Guard Malloc"
   else
-    "./$t" >/dev/null 2>&1 || ok=0
+    "./$t" >/dev/null 2>&1 || { ok=0; why="exited non-zero"; }
     label="run"
   fi
-  if [ $ok = 1 ]; then printf '  PASS (%s): %s\n' "$label" "$name"; pass=$((pass+1))
-  else printf '  FAIL: %s\n' "$name"; fail=$((fail+1)); failed="$failed $name"; fi
+  if [ "$ok" = 1 ]; then
+    printf '  PASS (%s): %s\n' "$label" "$name"; pass=$((pass + 1))
+  else
+    printf '  FAIL: %s -- %s\n' "$name" "$why"; fail=$((fail + 1)); failed="$failed $name"
+  fi
 done
 
 echo "----------------------------------------"
 echo "passed=$pass  failed=$fail"
-if [ $fail -eq 0 ]; then
-  echo "ALL PASS — the Swift runtime works on this machine."
+[ $((pass + fail)) -gt 0 ] || { echo "No tests in bin/ -- nothing was validated." >&2; exit 1; }
+if [ "$fail" -eq 0 ]; then
+  echo "ALL PASS -- the Swift runtime works on this machine."
 else
   echo "FAILURES:$failed"
-  echo "(Please report at the project's issue tracker with your exact OS X build: sw_vers.)"
+  echo "(Please report it with your exact OS X build: sw_vers.)"
   exit 1
 fi
