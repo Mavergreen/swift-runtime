@@ -12,7 +12,7 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 [ -f scripts/stage-runtime.sh ] || fail "no scripts/stage-runtime.sh"
 T="$(mktemp -d "${TMPDIR:-/tmp}/stage-and-package.XXXXXX")"
 trap 'rm -rf "$T"' EXIT
-P=usr/local/mavergreen-swift-runtime
+P=usr/local/mavergreen/swift-runtime
 
 mkdir -p "$T/built"
 printf 'int f(void){return 0;}\n' > "$T/f.c"
@@ -49,19 +49,27 @@ fi
 grep -q 'run build.sh' "$T/old.log" || fail "package.sh refused, but without saying to run build.sh"
 
 echo "-- staging replaces whatever an earlier layout left in OUT"
-mkdir -p "$T/out/usr/lib/swift" "$T/out/usr/local/share/doc/mavericks-swift-runtime" "$T/out/Library/keep"
+# Two earlier layouts: the released one (usr/lib/swift + a doc dir), and the never-released interim
+# usr/local/mavergreen-swift-runtime a local build.sh staged before the family's
+# /usr/local/mavergreen/<product> layout; OUT persists between builds, so either can be there.
+I=usr/local/mavergreen-swift-runtime
+mkdir -p "$T/out/usr/lib/swift" "$T/out/usr/local/share/doc/mavericks-swift-runtime" \
+  "$T/out/$I/lib/swift" "$T/out/Library/keep"
 : > "$T/out/usr/lib/swift/libswiftCore.dylib"
 : > "$T/out/usr/local/share/doc/mavericks-swift-runtime/LICENSE.txt"
+: > "$T/out/$I/lib/swift/libswiftCore.dylib"
+: > "$T/out/$I/LICENSE.txt"
 : > "$T/out/LICENSE.txt"
 sh scripts/stage-runtime.sh "$T/built" "$T/out" LICENSE
 got="$(cd "$T/out" && find usr LICENSE.txt Library 2>/dev/null | sort)"
-want="$(printf '%s\n' Library Library/keep usr usr/local "$P" "$P/LICENSE.txt" "$P/lib" "$P/lib/swift" \
-  "$P/lib/swift/libswiftCore.dylib" "$P/lib/swift/libswiftSwiftOnoneSupport.dylib" | sort)"
+want="$(printf '%s\n' Library Library/keep usr usr/local usr/local/mavergreen "$P" "$P/lib" \
+  "$P/lib/swift" "$P/lib/swift/libswiftCore.dylib" "$P/lib/swift/libswiftSwiftOnoneSupport.dylib" \
+  "$P/share" "$P/share/doc" "$P/share/doc/LICENSE.txt" | sort)"
 [ "$got" = "$want" ] || fail "staged tree is
 $got
 wanted
 $want"
-cmp -s LICENSE "$T/out/$P/LICENSE.txt" || fail "staged LICENSE.txt is not this repo's LICENSE"
+cmp -s LICENSE "$T/out/$P/share/doc/LICENSE.txt" || fail "staged LICENSE.txt is not this repo's LICENSE"
 
 echo "-- package.sh packages exactly the prefix"
 rm -rf "$T/out/Library"
@@ -71,8 +79,9 @@ pkg="$(ls "$T/dist"/swift-runtime-*.pkg)"
 # platform: a pkg built on a macOS 27 host whose files carry com.apple.provenance lists AppleDouble
 #           ._* members for them; CI-built pkgs have none, and 10.9's installer lays down no ._ file.
 payload="$(pkgutil --payload-files "$pkg" | grep -v '/\._' | sort)"
-want_payload="$(printf '%s\n' . ./usr ./usr/local "./$P" "./$P/LICENSE.txt" "./$P/lib" "./$P/lib/swift" \
-  "./$P/lib/swift/libswiftCore.dylib" "./$P/lib/swift/libswiftSwiftOnoneSupport.dylib" | sort)"
+want_payload="$(printf '%s\n' . ./usr ./usr/local ./usr/local/mavergreen "./$P" "./$P/lib" "./$P/lib/swift" \
+  "./$P/lib/swift/libswiftCore.dylib" "./$P/lib/swift/libswiftSwiftOnoneSupport.dylib" \
+  "./$P/share" "./$P/share/doc" "./$P/share/doc/LICENSE.txt" | sort)"
 [ "$payload" = "$want_payload" ] || fail "payload is
 $payload
 wanted

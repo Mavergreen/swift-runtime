@@ -5,7 +5,7 @@
 #            (default)  each test once
 #            --gate     the acceptance bar: SELFTEST_RUNS consecutive clean exits (default 500),
 #                       then 10 runs under Guard Malloc + MallocScribble + MallocGuardEdges
-#          SWIFT_RUNTIME_PREFIX  default /usr/local/mavergreen-swift-runtime; must match the rpath the
+#          SWIFT_RUNTIME_PREFIX  default /usr/local/mavergreen/swift-runtime; must match the rpath the
 #                                tests were built with
 #          SELFTEST_GMALLOC      default /usr/lib/libgmalloc.dylib
 #          Exit 0 all pass, 1 any failure, 77 no runtime installed (the family SKIP code: a CI runner
@@ -13,7 +13,7 @@
 set -eu
 cd "$(dirname "$0")"
 
-PREFIX="${SWIFT_RUNTIME_PREFIX:-/usr/local/mavergreen-swift-runtime}"
+PREFIX="${SWIFT_RUNTIME_PREFIX:-/usr/local/mavergreen/swift-runtime}"
 CORE="$PREFIX/lib/swift/libswiftCore.dylib"
 GMALLOC="${SELFTEST_GMALLOC:-/usr/lib/libgmalloc.dylib}"
 RUNS="${SELFTEST_RUNS:-500}"

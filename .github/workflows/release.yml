@@ -138,7 +138,7 @@ jobs:
         run: ./build.sh
 
       - name: Compat guard (must pass)
-        run: ./scripts/guard.sh "$SWRT_BUILD/out/usr/local/mavergreen-swift-runtime/lib/swift"/*.dylib
+        run: ./scripts/guard.sh "$SWRT_BUILD/out/usr/local/mavergreen/swift-runtime/lib/swift"/*.dylib
 
       - name: Build SwiftUpdater.app (Cocoa/Sparkle; must NOT link Swift)
         run: |

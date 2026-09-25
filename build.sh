@@ -171,10 +171,10 @@ shipyard-cmake -G Ninja -S swift -B "$ROOT/stdlib-build" \
 echo "==> 5. build libswiftCore (+ SwiftOnoneSupport)"
 ninja -C "$ROOT/stdlib-build" swiftCore-macosx-$ARCH swiftSwiftOnoneSupport-macosx-$ARCH
 
-echo "==> 6. stage the payload (usr/local/mavergreen-swift-runtime/, for package.sh's pkgbuild --root)"
+echo "==> 6. stage the payload (usr/local/mavergreen/swift-runtime/, for package.sh's pkgbuild --root)"
 OUT="${SWIFT_RUNTIME_OUT:-$SWRT_BUILD/out}"
 sh "$HERE/scripts/stage-runtime.sh" "$ROOT/stdlib-build/lib/swift/macosx/$ARCH" "$OUT" "$HERE/LICENSE"
-CORE="$OUT/usr/local/mavergreen-swift-runtime/lib/swift/libswiftCore.dylib"
+CORE="$OUT/usr/local/mavergreen/swift-runtime/lib/swift/libswiftCore.dylib"
 
 echo "==> 7. self pre-flight (must show minOS 10.9 and NO os_unfair_lock)"
 # platform: dyld_info reads an x86_64 Mach-O natively on an arm64 host. `arch -x86_64 dyld_info`

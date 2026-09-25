@@ -34,22 +34,27 @@ and `if #available`. Enough for **command-line / computational Swift**.
 ```sh
 sudo installer -pkg swift-runtime-<version>.pkg -target /
 ```
-Installs the runtime into `/usr/local/mavergreen-swift-runtime/lib/swift/`. A program finds it
-through an rpath naming that directory.
+Installs the runtime into `/usr/local/mavergreen/swift-runtime/lib/swift/` and its license into
+`/usr/local/mavergreen/swift-runtime/share/doc/`. A program finds the runtime through an rpath
+naming that directory.
 
-**Building a program for 10.9 on a modern Mac.** Stock `swiftc` adds an rpath of `/usr/lib/swift`
-for this target; replace it with the runtime's:
+**Building a program for 10.9 on a modern Mac.** Use the swift.org toolchain of the Swift release
+this runtime is built from, with the SDK `xcrun` finds. (On an Apple-silicon Mac, the `swiftc` in
+Command Line Tools 27 cannot link this target: its `libswiftCompatibility*.a` are arm64-only.)
+`swiftc` adds an rpath of `/usr/lib/swift`; replace it with the runtime's:
 ```sh
-swiftc -target x86_64-apple-macosx10.9 -O -no-stdlib-rpath \
-  -Xlinker -rpath -Xlinker /usr/local/mavergreen-swift-runtime/lib/swift hello.swift -o hello
-./hello
+<swift.org toolchain>/usr/bin/swiftc -sdk "$(xcrun --show-sdk-path)" \
+  -target x86_64-apple-macosx10.9 -O -no-stdlib-rpath \
+  -Xlinker -rpath -Xlinker /usr/local/mavergreen/swift-runtime/lib/swift hello.swift -o hello
 ```
+The binary's only rpath is the runtime's directory, so it runs on the 10.9 Mac, not on the one that
+built it: copy `hello` to the 10.9 Mac and run `./hello` there.
 
 **A prebuilt Swift binary** that expects the runtime in `/usr/lib/swift` needs one
 [Drydock](https://github.com/Mavergreen/drydock) statement, usually beside others it already needs to
 run on 10.9:
 ```
-rpath replace /usr/lib/swift /usr/local/mavergreen-swift-runtime/lib/swift
+rpath replace /usr/lib/swift /usr/local/mavergreen/swift-runtime/lib/swift
 ```
 
 ## How it's built

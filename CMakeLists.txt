@@ -23,7 +23,7 @@ mavericks_add_updater_app(
   VERSION "${MAVSWIFT_VERSION}"
   LOG_PREFIX "MavSwiftUpdater"
   CONFIRM_TITLE "Mavericks Swift Runtime updated"
-  CONFIRM_BODY "The Swift runtime in /usr/local/mavergreen-swift-runtime was updated."
+  CONFIRM_BODY "The Swift runtime in /usr/local/mavergreen/swift-runtime was updated."
   RELAUNCH_MARKER "/tmp/.mavericks-swift-updater-relaunched"
   # no PANE_HINT_KEY -> background-found updates post an NSUserNotification (headless runtime, no pane)
 )

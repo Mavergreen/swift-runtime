@@ -3,7 +3,7 @@
 #          Compiles every tests/*.swift for x86_64-apple-macosx10.9, at -O and -Onone, into a
 #          self-test bundle for a 10.9 box: bin/<name> and bin/<name>-Onone, plus run-selftest.sh.
 #          Each binary's only rpath is $SWIFT_RUNTIME_PREFIX/lib/swift (default
-#          /usr/local/mavergreen-swift-runtime), so the bundle exercises exactly the runtime there.
+#          /usr/local/mavergreen/swift-runtime), so the bundle exercises exactly the runtime there.
 #          Run after build.sh, which expands the toolchain this uses. Prints the tarball's path last.
 #          Env: MAVERICKS_BUILD_ROOT, TC (toolchain usr/), DIST (output dir), SWIFT_RUNTIME_PREFIX.
 set -eu
@@ -12,7 +12,7 @@ REPO="$(cd "$(dirname "$0")" && pwd)"
 SWRT_BUILD="$MAVERICKS_BUILD_ROOT/swift-runtime-cross"
 TC="${TC:-$SWRT_BUILD/work/toolchain/usr}"
 DIST="${DIST:-$SWRT_BUILD/dist}"
-RUNTIME_LIB="${SWIFT_RUNTIME_PREFIX:-/usr/local/mavergreen-swift-runtime}/lib/swift"
+RUNTIME_LIB="${SWIFT_RUNTIME_PREFIX:-/usr/local/mavergreen/swift-runtime}/lib/swift"
 SWIFTC="$TC/bin/swiftc"
 [ -x "$SWIFTC" ] || { echo "make-selftest: no swiftc at $SWIFTC -- run build.sh first" >&2; exit 1; }
 SDK="$(xcrun --show-sdk-path)"
