@@ -16,6 +16,18 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 PREFIX=/opt/example-runtime-prefix
 tarball="$(DIST="$T/dist" SWIFT_RUNTIME_PREFIX="$PREFIX" sh "$REPO/make-selftest.sh" | tail -1)"
 [ -f "$tarball" ] || fail "make-selftest.sh did not print an existing tarball (got '$tarball')"
+
+# 10.9's libarchive 2.8.3 chokes on the pax xattr headers a modern host's bsdtar writes (e.g.
+# com.apple.provenance), and on the AppleDouble ._ sidecar members it emits for a resource fork:
+# `tar -tzf` there prints "Ignoring malformed pax extended attribute" and exits 1. Neither may
+# appear in the archive make-selftest.sh builds.
+if gzip -dc "$tarball" | grep -aq 'LIBARCHIVE\.xattr\.\|SCHILY\.xattr\.'; then
+  fail "tarball carries a pax xattr header 10.9's libarchive 2.8.3 cannot parse"
+fi
+if tar -tzf "$tarball" | grep -q '/\._'; then
+  fail "tarball carries an AppleDouble ._ member"
+fi
+
 tar -xzf "$tarball" -C "$T"
 B="$T/swift-runtime-selftest"
 [ -f "$B/run-selftest.sh" ] || fail "bundle has no run-selftest.sh"

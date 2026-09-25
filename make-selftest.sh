@@ -32,5 +32,13 @@ done
 [ -n "$(ls -A "$B/bin")" ] || { echo "make-selftest: no tests/*.swift to build" >&2; exit 1; }
 cp "$REPO/tests/run-selftest.sh" "$B/run-selftest.sh"; chmod +x "$B/run-selftest.sh"
 
-( cd "$DIST" && tar -czf "$NAME.tar.gz" "$NAME" && rm -rf "$NAME" )
+# A modern host's bsdtar tags most files with com.apple.provenance and packs it as a pax
+# LIBARCHIVE.xattr./SCHILY.xattr. header; 10.9's libarchive 2.8.3 can't parse that ("Ignoring
+# malformed pax extended attribute") and `tar -xzf` there exits 1. COPYFILE_DISABLE keeps
+# AppleDouble ._ sidecar members out of the archive too. --no-xattrs suppresses the pax header, but
+# 10.9's own bsdtar (this script also runs ON 10.9) doesn't know that flag and would abort under
+# set -eu, so probe for support first instead of passing it unconditionally.
+NOX=""
+if tar --no-xattrs -cf /dev/null "$REPO/make-selftest.sh" >/dev/null 2>&1; then NOX="--no-xattrs"; fi
+( cd "$DIST" && COPYFILE_DISABLE=1 tar $NOX -czf "$NAME.tar.gz" "$NAME" && rm -rf "$NAME" )
 echo "$DIST/$NAME.tar.gz"
