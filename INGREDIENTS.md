@@ -54,3 +54,7 @@ family uses, and the reason `N` exists.
 
 What this does *not* change: CI green is still not acceptance. Real-10.9 validation remains the bar
 for believing a release is good; it is no longer the bar for publishing one.
+
+## Conformance deviations
+
+- sdk-pin:*/swift-runtime/lib/swift/*.dylib: the Swift runtime cannot be built against the 10.9 SDK, which has no libc++ headers at all (only libstdc++ 4.2.1) while Swift 6.4 requires C++17, and which lacks declarations of post-10.9 APIs the runtime calls behind availability checks. Its build uses a modern SDK: today the CI runner's Xcode SDK, unpinned; the swift T2 decision (2026-09-25) replaces that with one pinned modern SDK used by CI and on 10.9. minos stays 10.9, and the real-10.9 gate is its acceptance. Revisit if the gate gains per-product pins.
