@@ -94,6 +94,8 @@ are deliberate, and scoped to the artifact they concern:
 - bundle-id:swift-build.*: SwiftPM's SwiftBuild_*.bundle resource bundles, verbatim in upstream's pkg (6.4 renamed their ids from `SwiftBuild.*`).
 - bundle-id:swiftpm.*: SwiftPM's own SwiftPM_*.bundle resource bundles (SBOMModel), verbatim in upstream's pkg.
 - bundle-id:swift-crypto.*: SwiftPM's swift-crypto_*.bundle resource bundles, verbatim in upstream's pkg.
+- sdk-pin:Library/Developer/Toolchains/swift-*.xctoolchain/*: swift.org's own installer, mirrored verbatim and never recompiled or re-signed by us, so its binaries record whatever SDK and floor swift.org built them against (the same scope as the install-path and bundle-id deviations above)
+- sdk-pin:llvm/bin/*: build-only LLVM TableGen host tools (llvm-tblgen, clang-tblgen, llvm-config, llvm-min-tblgen) that swift-runtime's build runs and never installs on anyone's Mac
 
 The `install-path` and `bundle-id` entries were read from upstream's 6.3.3 package itself (its
 `PackageInfo`, `Distribution` and `Bom`, fetched by byte range rather than as the whole 1.4 GB), and
