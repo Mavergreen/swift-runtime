@@ -54,11 +54,3 @@ family uses, and the reason `N` exists.
 
 What this does *not* change: CI green is still not acceptance. Real-10.9 validation remains the bar
 for believing a release is good; it is no longer the bar for publishing one.
-
-## Conformance deviations
-
-- install-path:usr/lib/swift/*: Swift binaries for 10.9 load the runtime only from /usr/lib/swift.
-  It is the standard library's own install name (`/usr/lib/swift/libswiftCore.dylib`), and a
-  back-deployed binary finds it through an rpath of `/usr/lib/swift`, which `swiftc` adds and the
-  README tells consumers to pass. 10.9's dyld does not honour `@loader_path`, so there is no
-  relocatable alternative: anywhere else, no program would load it.

@@ -171,19 +171,10 @@ shipyard-cmake -G Ninja -S swift -B "$ROOT/stdlib-build" \
 echo "==> 5. build libswiftCore (+ SwiftOnoneSupport)"
 ninja -C "$ROOT/stdlib-build" swiftCore-macosx-$ARCH swiftSwiftOnoneSupport-macosx-$ARCH
 
-echo "==> 6. stage output (install layout: out/usr/lib/swift/ so package.sh's pkgbuild --root works)"
-REPO="$HERE"
-OUT="${SWIFT_RUNTIME_OUT:-$SWRT_BUILD/out}"; DEST="$OUT/usr/lib/swift"; mkdir -p "$DEST"
-CORE="$DEST/libswiftCore.dylib"
-cp "$ROOT/stdlib-build/lib/swift/macosx/$ARCH/libswiftCore.dylib" "$CORE"
-cp "$ROOT/stdlib-build/lib/swift/macosx/$ARCH/libswiftSwiftOnoneSupport.dylib" "$DEST/" 2>/dev/null || true
-# Vendor the license INTO the install layout: package.sh shows this copy at install time, and the
-# payload installs it beside the other family docs. It used to go to $OUT/LICENSE.txt, which
-# pkgbuild --root "$OUT" then shipped as /LICENSE.txt at the root of the user's disk. Drop that stale
-# copy too: $OUT persists between builds, and package.sh refuses a payload with files at its root.
-rm -f "$OUT/LICENSE.txt"
-DOC="$OUT/usr/local/share/doc/mavericks-swift-runtime"; mkdir -p "$DOC"
-cp "$REPO/LICENSE" "$DOC/LICENSE.txt"
+echo "==> 6. stage the payload (usr/local/mavergreen-swift-runtime/, for package.sh's pkgbuild --root)"
+OUT="${SWIFT_RUNTIME_OUT:-$SWRT_BUILD/out}"
+sh "$HERE/scripts/stage-runtime.sh" "$ROOT/stdlib-build/lib/swift/macosx/$ARCH" "$OUT" "$HERE/LICENSE"
+CORE="$OUT/usr/local/mavergreen-swift-runtime/lib/swift/libswiftCore.dylib"
 
 echo "==> 7. self pre-flight (must show minOS 10.9 and NO os_unfair_lock)"
 # platform: dyld_info reads an x86_64 Mach-O natively on an arm64 host. `arch -x86_64 dyld_info`

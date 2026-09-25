@@ -22,12 +22,12 @@ VERSION="$(MAVERICKS_ROOT="$HERE" sh "$SHIPYARD/resolve-version.sh")"
 IDENTIFIER="${PKG_IDENTIFIER:-dev.mavergreen.swift-runtime}"
 NAME="swift-runtime-${VERSION}"
 mkdir -p "$DIST"
-[ -f "$OUT/usr/lib/swift/libswiftCore.dylib" ] || { echo "no build in $OUT; run build.sh" >&2; exit 1; }
+[ -f "$OUT/usr/local/mavergreen-swift-runtime/lib/swift/libswiftCore.dylib" ] || { echo "no build in $OUT; run build.sh" >&2; exit 1; }
 
 echo ">> resources (welcome + license shown at install)"
 RES="$DIST/resources"; mkdir -p "$RES"
 cp scripts/resources/Welcome.html "$RES/"
-LICENSE_TXT="$OUT/usr/local/share/doc/mavericks-swift-runtime/LICENSE.txt"
+LICENSE_TXT="$OUT/usr/local/mavergreen-swift-runtime/LICENSE.txt"
 [ -f "$LICENSE_TXT" ] || { echo "no $LICENSE_TXT; run build.sh (it vendors the license)" >&2; exit 1; }
 cp "$LICENSE_TXT" "$RES/"
 
@@ -55,7 +55,7 @@ else
   echo "   (no updater app at $UPD_APP; packaging runtime only -- build it: shipyard-cmake --build \"\$SWRT_BUILD/build/updater\")"
 fi
 
-echo ">> flat component pkg (payload -> /usr/lib/swift, /usr/local, /Library/LaunchAgents)"
+echo ">> flat component pkg (payload -> /usr/local/mavergreen-swift-runtime, /Library)"
 pkgbuild --root "$OUT" --identifier "$IDENTIFIER" --version "$VERSION" \
   "$@" \
   --install-location / "$DIST/swift-runtime-component.pkg"

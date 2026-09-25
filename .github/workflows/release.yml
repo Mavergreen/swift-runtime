@@ -138,7 +138,7 @@ jobs:
         run: ./build.sh
 
       - name: Compat guard (must pass)
-        run: ./scripts/guard.sh "$SWRT_BUILD/out/usr/lib/swift"/*.dylib
+        run: ./scripts/guard.sh "$SWRT_BUILD/out/usr/local/mavergreen-swift-runtime/lib/swift"/*.dylib
 
       - name: Build SwiftUpdater.app (Cocoa/Sparkle; must NOT link Swift)
         run: |
@@ -146,7 +146,7 @@ jobs:
           shipyard-cmake -S . -B "$SWRT_BUILD/build/updater" -DCMAKE_OBJC_COMPILER=/usr/bin/clang
           shipyard-cmake --build "$SWRT_BUILD/build/updater" --target SwiftUpdater
           otool -L "$SWRT_BUILD/build/updater/SwiftUpdater.app/Contents/MacOS/SwiftUpdater" | tee /tmp/o.txt
-          ! grep -q '/usr/lib/swift' /tmp/o.txt || { echo "::error::updater links libswiftCore (self-update circularity)"; exit 1; }
+          ! grep -q 'libswift' /tmp/o.txt || { echo "::error::updater links a Swift runtime library (self-update circularity)"; exit 1; }
 
       - name: Package runtime .pkg (10.9.5 floor; stages the updater + shim + LaunchAgent)
         run: ./package.sh
