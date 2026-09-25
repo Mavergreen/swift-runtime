@@ -1,4 +1,5 @@
 #!/bin/sh
+# platform: macOS-only -- verifies the installer signature with pkgutil (lib.sh)
 # package.sh — tar the LLVM build-support tree and emit dist/SHA256SUMS.
 set -eu
 

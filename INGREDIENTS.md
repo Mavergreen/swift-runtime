@@ -88,6 +88,8 @@ are deliberate, and scoped to the artifact they concern:
 - install-path:Library/Developer/Toolchains/swift-*.xctoolchain/*: upstream's pkg, verbatim, installs where Xcode finds toolchains.
   It is its component's `install-location`, and where `xcrun --toolchain` looks; we do not relocate
   bytes we mirror.
+- manifest:upstream-swift-*.pkg: mirrored verbatim from swift.org; it is a build input
+  swift-runtime expands, never installed by the family, so there is no product tree for a manifest to describe.
 - bundle-id:org.swift.*: upstream's own bundles, verbatim in upstream's pkg (sourcekitd, sourcekitdInProc, PlaygroundLogger).
 - bundle-id:com.apple.dt.*: PlaygroundSupport and XCPlayground frameworks, verbatim in upstream's pkg under Apple's ids.
 - bundle-id:com.apple.LLDB.framework: LLDB.framework, verbatim in upstream's pkg under Apple's id.

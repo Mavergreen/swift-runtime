@@ -1,4 +1,5 @@
 #!/bin/sh
+# platform: macOS-only -- runs xcrun
 # verify-relocatable.sh — THE GATE.
 #
 # Extracts out/llvm into a directory whose name differs from where it was built, then runs a

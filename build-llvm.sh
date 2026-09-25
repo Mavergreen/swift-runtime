@@ -1,4 +1,5 @@
 #!/bin/sh
+# platform: host-agnostic
 # build-llvm.sh — build a RELOCATABLE LLVM build-support tree for the Swift stdlib build.
 #
 # Produces out/llvm: a CMake *install* tree (relocatable — LLVMConfig.cmake derives its prefix

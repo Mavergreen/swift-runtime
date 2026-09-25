@@ -1,4 +1,5 @@
 #!/bin/sh
+# platform: host-agnostic
 # Write UPSTREAM_VERSION = SWIFT_VERSION, the ONE authoritative Swift pin in pins.env.
 #
 # Reads the pin with sed rather than sourcing pins.env, deliberately: pins.env computes VERSION (the

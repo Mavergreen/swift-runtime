@@ -1,4 +1,5 @@
 #!/bin/sh
+# platform: macOS-only -- runs pkgutil
 # lib.sh — helpers shared by build-llvm.sh, mirror-toolchain.sh, package.sh, and
 # verify-relocatable.sh. Sourced after pins.env, which supplies TOOLCHAIN_SIGNER. Kept here rather
 # than copied into each script: two copies of a verification routine (or a build-root default) is

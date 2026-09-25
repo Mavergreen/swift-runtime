@@ -1,4 +1,5 @@
 #!/bin/sh
+# platform: macOS-only -- verifies the installer signature with pkgutil (lib.sh)
 # mirror-toolchain.sh — download the official swift.org toolchain and stage it VERBATIM.
 # No repacking: the mirrored file is byte-identical to upstream, so its SHA256 is the upstream
 # SHA256 and provenance stays checkable against download.swift.org. That digest is RECORDED, not
