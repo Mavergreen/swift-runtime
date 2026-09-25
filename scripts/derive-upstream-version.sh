@@ -1,4 +1,5 @@
 #!/bin/sh
+# platform: host-agnostic
 # Write UPSTREAM_VERSION = SWIFT_VERSION, the Swift release this runtime is built from (build.sh).
 #
 # Reads the pin with sed rather than sourcing build.sh: build.sh is the whole build, not a pins file.

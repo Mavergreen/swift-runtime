@@ -1,4 +1,5 @@
 #!/bin/sh
+# platform: macOS-only -- xcrun finds the macOS SDK the runtime compiles against
 # build.sh — reproducible from-source build of libswiftCore for macOS 10.9 / x86_64.
 #
 # Produces: out/libswiftCore.dylib (+ libswiftSwiftOnoneSupport.dylib), minOS 10.9,

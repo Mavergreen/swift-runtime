@@ -1,4 +1,5 @@
 #!/bin/sh
+# platform: host-agnostic
 # usage: sh tests/selftest-gate-test.sh
 #   Exercises tests/run-selftest.sh against small C fixtures: a clean program, one that exits 1,
 #   and one whose heap overrun only Guard Malloc catches.

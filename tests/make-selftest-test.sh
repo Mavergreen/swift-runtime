@@ -1,4 +1,5 @@
 #!/bin/sh
+# platform: macOS-only -- xcrun finds dyld_info, which reads the built Mach-O binaries
 # usage: sh tests/make-selftest-test.sh
 #   Builds the self-test bundle with the toolchain build.sh expanded, and checks every binary is
 #   x86_64 / minOS 10.9 with exactly one rpath: the runtime prefix. SKIP when build.sh has not run.

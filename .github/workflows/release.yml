@@ -140,16 +140,16 @@ jobs:
       - name: Compat guard (must pass)
         run: ./scripts/guard.sh "$SWRT_BUILD/out/usr/local/mavergreen/swift-runtime/lib/swift"/*.dylib
 
-      - name: Build SwiftUpdater.app (Cocoa/Sparkle; must NOT link Swift)
+      - name: Build swift-runtime-updater.app (Cocoa/Sparkle; must NOT link Swift)
         run: |
           # The Sparkle framework is fetched inside mavericks_add_updater_app (mavericks_fetch_sparkle).
           shipyard-cmake -S . -B "$SWRT_BUILD/build/updater" -DCMAKE_OBJC_COMPILER=/usr/bin/clang \
             -DCMAKE_TOOLCHAIN_FILE="$SHIPYARD_SCRIPTS/../MavericksToolchain.cmake"
-          shipyard-cmake --build "$SWRT_BUILD/build/updater" --target SwiftUpdater
-          otool -L "$SWRT_BUILD/build/updater/SwiftUpdater.app/Contents/MacOS/SwiftUpdater" | tee /tmp/o.txt
+          shipyard-cmake --build "$SWRT_BUILD/build/updater" --target swift-runtime-updater
+          otool -L "$SWRT_BUILD/build/updater/swift-runtime-updater.app/Contents/MacOS/swift-runtime-updater" | tee /tmp/o.txt
           ! grep -q 'libswift' /tmp/o.txt || { echo "::error::updater links a Swift runtime library (self-update circularity)"; exit 1; }
 
-      - name: Package runtime .pkg (10.9.5 floor; stages the updater + shim + LaunchAgent)
+      - name: Package runtime .pkg (10.9.5 floor; stages the manifest, updater + LaunchAgent)
         run: ./package.sh
 
       # One generator call writes the one file the appcast below and the Release body both read --
@@ -178,11 +178,10 @@ jobs:
           # The tag IS the version, so the download path carries no `v`.
           URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/$VER/$(basename "$PKG")"
           # sign_and_appcast.sh auto-fetches the prebuilt ed25519-sign, signs the pkg, and renders the appcast.
-          sh "$SH/sign_and_appcast.sh" \
+          sh "$SH/sign_and_appcast.sh" --product swift-runtime --feed-dir "$SWRT_BUILD/dist" \
             --channel-title "Mavericks Swift Runtime" --version "$VER" \
-            --pkg-url "$URL" --notes-file "$SWRT_BUILD/dist/RELEASE_NOTES.md" --pkg "$PKG" --min-os 10.9.5 \
-            > "$SWRT_BUILD/dist/appcast.xml"
-          echo "=== appcast.xml ==="; cat "$SWRT_BUILD/dist/appcast.xml"
+            --pkg-url "$URL" --notes-file "$SWRT_BUILD/dist/RELEASE_NOTES.md" --pkg "$PKG" --min-os 10.9.5
+          echo "=== swift-runtime.xml ==="; cat "$SWRT_BUILD/dist/swift-runtime.xml"
 
       # NOTE: the self-test bundle is intentionally dropped from this release. The hand-rolled
       # thorough_test linked Increment-1 siblings (libswiftObjectiveC/Darwin) not shipped in the
@@ -204,7 +203,7 @@ jobs:
           # Behavior gate: a client on the previous release must SEE this as an upgrade -- a numeric
           # sparkle:version that orders strictly after the last published one (ordering conformance
           # never exercised; the gap the "-mavericks.N compares EQUAL" bug shipped through).
-          sh "$SHIPYARD_SCRIPTS/assert_appcast_upgradeable.sh" --appcast "$SWRT_BUILD/dist/appcast.xml" --version "${{ steps.ver.outputs.version }}"
+          sh "$SHIPYARD_SCRIPTS/assert_appcast_upgradeable.sh" --appcast "$SWRT_BUILD/dist/swift-runtime.xml" --version "${{ steps.ver.outputs.version }}"
 
       # No SHA256SUMS in the artifact: publish-release.yml regenerates it over everything it attaches.
       - name: Upload artifacts
@@ -213,7 +212,7 @@ jobs:
           name: swift-runtime
           path: |
             ${{ env.SWRT_BUILD }}/dist/*.pkg
-            ${{ env.SWRT_BUILD }}/dist/appcast.xml
+            ${{ env.SWRT_BUILD }}/dist/swift-runtime.xml
             ${{ env.SWRT_BUILD }}/dist/RELEASE_NOTES.md
 
   # Before anything is published: no log of this run, and no file about to be released, carries a

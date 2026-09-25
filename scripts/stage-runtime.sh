@@ -1,4 +1,5 @@
 #!/bin/sh
+# platform: host-agnostic
 #   usage: stage-runtime.sh <built-lib-dir> <out-dir> <license-file>
 #          Lays out the runtime .pkg's payload under <out-dir>: libswiftCore.dylib and
 #          libswiftSwiftOnoneSupport.dylib from <built-lib-dir> in

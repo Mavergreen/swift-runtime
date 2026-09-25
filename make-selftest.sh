@@ -1,4 +1,5 @@
 #!/bin/sh
+# platform: macOS-only -- xcrun finds the macOS SDK the self-tests compile against
 #   usage: make-selftest.sh
 #          Compiles every tests/*.swift for x86_64-apple-macosx10.9, at -O and -Onone, into a
 #          self-test bundle for a 10.9 box: bin/<name> and bin/<name>-Onone, plus run-selftest.sh.
