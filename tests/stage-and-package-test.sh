@@ -127,6 +127,14 @@ $want_upd"
 grep -q dev.mavergreen.swift-runtime-updatecheck "$comp/Scripts/postinstall" \
   || fail "the postinstall does not load dev.mavergreen.swift-runtime-updatecheck"
 
+echo "-- with REQUIRE_UPDATER=1, package.sh refuses to package without the updater, naming it"
+rc=0; OUT="$T/out" DIST="$T/dist-noupd" UPD_APP="$T/missing/swift-runtime-updater.app" REQUIRE_UPDATER=1 \
+  sh ./package.sh > "$T/noupd.log" 2>&1 || rc=$?
+[ "$rc" -ne 0 ] || fail "package.sh packaged without the updater although REQUIRE_UPDATER=1"
+grep -q "$T/missing/swift-runtime-updater.app" "$T/noupd.log" \
+  || fail "package.sh refused, but did not name the missing updater: $(cat "$T/noupd.log")"
+[ -z "$(ls "$T/dist-noupd"/swift-runtime-*.pkg 2>/dev/null)" ] || fail "package.sh left a pkg behind after refusing"
+
 echo "-- package.sh packages exactly the prefix, with no updater left from an earlier run"
 OUT="$T/out" DIST="$T/dist" UPD_APP=/nonexistent sh ./package.sh > "$T/pkg.log" 2>&1 \
   || { cat "$T/pkg.log" >&2; fail "package.sh failed on the staged layout"; }

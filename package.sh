@@ -46,6 +46,9 @@ SCR="$DIST/pkg-scripts"; rm -rf "$SCR"
 set -- --stage "$OUT" --product swift-runtime --name "Mavericks Swift Runtime" --version "$VERSION" --scripts-out "$SCR"
 if [ -d "$UPD_APP" ]; then
   set -- "$@" --updater-app "$UPD_APP"
+elif [ "${REQUIRE_UPDATER:-}" = 1 ]; then
+  echo "no updater app at $UPD_APP, and REQUIRE_UPDATER=1: a release never ships without its updater -- build it: shipyard-cmake --build \"\$SWRT_BUILD/build/updater\" --target swift-runtime-updater" >&2
+  exit 1
 else
   echo "   (no updater app at $UPD_APP; packaging runtime only -- build it: shipyard-cmake --build \"\$SWRT_BUILD/build/updater\")"
 fi

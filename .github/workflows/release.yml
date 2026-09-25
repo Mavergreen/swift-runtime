@@ -146,11 +146,12 @@ jobs:
           shipyard-cmake -S . -B "$SWRT_BUILD/build/updater" -DCMAKE_OBJC_COMPILER=/usr/bin/clang \
             -DCMAKE_TOOLCHAIN_FILE="$SHIPYARD_SCRIPTS/../MavericksToolchain.cmake"
           shipyard-cmake --build "$SWRT_BUILD/build/updater" --target swift-runtime-updater
-          otool -L "$SWRT_BUILD/build/updater/swift-runtime-updater.app/Contents/MacOS/swift-runtime-updater" | tee /tmp/o.txt
+          otool -L "$SWRT_BUILD/build/updater/swift-runtime-updater.app/Contents/MacOS/swift-runtime-updater" > /tmp/o.txt
+          cat /tmp/o.txt
           ! grep -q 'libswift' /tmp/o.txt || { echo "::error::updater links a Swift runtime library (self-update circularity)"; exit 1; }
 
       - name: Package runtime .pkg (10.9.5 floor; stages the manifest, updater + LaunchAgent)
-        run: ./package.sh
+        run: REQUIRE_UPDATER=1 ./package.sh
 
       # One generator call writes the one file the appcast below and the Release body both read --
       # title, optional committed prose (release-notes/$VER.md, verbatim), What changed, Build
@@ -193,8 +194,8 @@ jobs:
         run: sh "$SHIPYARD_SCRIPTS/assert-tree-clean.sh"
 
       # Conformance: do the artifacts about to be published agree with each other and with the
-      # family's schemes? Gated on a tag, which is when this repo publishes -- a plain push builds
-      # without producing the appcast this asks about.
+      # family's schemes? Gated on publish, since only a publishing run signs and so has the feed this
+      # asks about.
       - name: Artifact conformance
         if: steps.ver.outputs.publish == 'true'
         run: |
