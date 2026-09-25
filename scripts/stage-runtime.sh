@@ -14,6 +14,20 @@ BUILT="$1"; OUT="$2"; LICENSE="$3"
 case "$OUT" in
   ''|/) echo "stage-runtime: refusing out-dir '$OUT'" >&2; exit 2 ;;
 esac
+# Nor does that catch / by another name (//, /., /tmp/.., a symlink's ..), and 10.9 has no SIP to
+# save /usr. So resolve an existing out-dir both ways: logically, as cd reads it (/tmp/.. is /), and
+# physically, as rm does (/tmp/.. is /private). CDPATH could send cd somewhere rm never goes, and
+# this sh keeps a leading // in pwd's answer, so / is any string of nothing but slashes.
+if [ -d "$OUT" ]; then
+  logical="$(CDPATH='' cd "$OUT" && pwd -P)"
+  physical="$(CDPATH='' cd -P "$OUT" && pwd -P)"
+  for r in "$logical" "$physical"; do
+    case "$r" in
+      *[!/]*) ;;
+      *) echo "stage-runtime: refusing out-dir '$OUT' (it is /)" >&2; exit 2 ;;
+    esac
+  done
+fi
 for lib in libswiftCore.dylib libswiftSwiftOnoneSupport.dylib; do
   [ -f "$BUILT/$lib" ] || { echo "stage-runtime: $BUILT has no $lib" >&2; exit 1; }
 done

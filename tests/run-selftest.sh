@@ -8,10 +8,16 @@
 #          SWIFT_RUNTIME_PREFIX  default /usr/local/mavergreen/swift-runtime; must match the rpath the
 #                                tests were built with
 #          SELFTEST_GMALLOC      default /usr/lib/libgmalloc.dylib
-#          Exit 0 all pass, 1 any failure, 77 no runtime installed (the family SKIP code: a CI runner
-#          never has one).
+#          Exit 0 all pass, 1 any failure or any DYLD_* variable set, 2 any other argument, 77 no
+#          runtime installed (the family SKIP code: a CI runner never has one) or no bin/ here (the
+#          repo's own tests/, which is not a bundle).
 set -eu
 cd "$(dirname "$0")"
+# Anything else once ran quick mode: a mistyped -gate printed ALL PASS as if it had gated.
+case "$#:${1:-}" in
+  0:|1:--gate) ;;
+  *) echo "usage: run-selftest.sh [--gate]" >&2; exit 2 ;;
+esac
 
 PREFIX="${SWIFT_RUNTIME_PREFIX:-/usr/local/mavergreen/swift-runtime}"
 CORE="$PREFIX/lib/swift/libswiftCore.dylib"
@@ -24,6 +30,15 @@ GMALLOC_RUNS=10
   echo "Install it first:  sudo installer -pkg swift-runtime-*.pkg -target /" >&2
   exit 77
 }
+# run-repo-tests.sh runs every tests/*.sh, this one included, from the repo's tests/, which is not a
+# bundle; wherever a runtime is installed, "No tests in bin/" below failed the whole suite. A bin/
+# that exists but is empty is a broken bundle, and still fails.
+[ -d bin ] || { echo "not a self-test bundle (no bin/) -- skipping" >&2; exit 77; }
+# The gate's rule is "no DYLD variables": DYLD_LIBRARY_PATH and its kin outrank the rpath, so the
+# tests could validate some other runtime. (Guard Malloc's DYLD_INSERT_LIBRARIES below is set on
+# each command, never inherited.)
+dyld="$(env | sed -n 's/^\(DYLD_[A-Za-z0-9_]*\)=.*/\1/p' | tr '\n' ' ')"
+[ -z "$dyld" ] || { echo "refusing to run with DYLD_* set: ${dyld% }" >&2; exit 1; }
 case "$RUNS" in
   ''|*[!0-9]*|0) echo "SELFTEST_RUNS must be a positive integer (got '$RUNS')" >&2; exit 1 ;;
 esac

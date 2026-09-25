@@ -60,8 +60,33 @@ case "$out" in *'Guard Malloc did not load'*) ;; *) fail "non-gmalloc insert: wr
 echo "-- an empty bin/ fails"
 run "$(bundle)"; [ "$rc" = 1 ] || fail "empty bin: rc=$rc: $out"
 
+echo "-- no bin/ at all (the repo's own tests/, as run-repo-tests.sh runs it): SKIP"
+b="$(mktemp -d "$T/bundle.XXXXXX")"; cp "$REPO/tests/run-selftest.sh" "$b/"
+run "$b"; [ "$rc" = 77 ] || fail "no bin/: rc=$rc: $out"
+case "$out" in *'not a self-test bundle (no bin/)'*) ;; *) fail "no bin/: wrong reason: $out" ;; esac
+
 echo "-- a non-numeric SELFTEST_RUNS is refused"
 RUNS=abc; run "$(bundle ok)" --gate; RUNS=3
 [ "$rc" = 1 ] || fail "SELFTEST_RUNS=abc: rc=$rc: $out"
 case "$out" in *'SELFTEST_RUNS'*) ;; *) fail "SELFTEST_RUNS=abc: not named: $out" ;; esac
+
+echo "-- an unknown argument is refused, not run as quick mode"
+run "$(bundle ok)" -gate; [ "$rc" = 2 ] || fail "-gate: rc=$rc: $out"
+case "$out" in *'usage: run-selftest.sh [--gate]'*) ;; *) fail "-gate: no usage line: $out" ;; esac
+
+echo "-- an inherited DYLD_* variable is refused"
+# platform: modern macOS's SIP strips DYLD_* from the environment of /bin/sh itself, so the
+#           refusal is observable only where a DYLD_ variable reaches a sh child (10.9: no SIP).
+if [ "$(DYLD_LIBRARY_PATH=/x sh -c 'printf %s "${DYLD_LIBRARY_PATH:-}"')" = /x ]; then
+  b="$(bundle ok)"; rc=0
+  out="$(cd / && DYLD_LIBRARY_PATH="$T/nowhere" SWIFT_RUNTIME_PREFIX="$T/prefix" SELFTEST_RUNS="$RUNS" \
+    sh "$b/run-selftest.sh" --gate 2>&1)" || rc=$?
+  [ "$rc" = 1 ] || fail "DYLD_LIBRARY_PATH set: rc=$rc: $out"
+  case "$out" in
+    *'refusing to run with DYLD_* set: DYLD_LIBRARY_PATH'*) ;;
+    *) fail "DYLD_LIBRARY_PATH set: wrong reason: $out" ;;
+  esac
+else
+  echo "   DYLD_* stripped by this OS; refusal case not exercised"
+fi
 echo "PASS"

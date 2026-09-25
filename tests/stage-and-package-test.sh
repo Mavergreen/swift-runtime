@@ -29,17 +29,20 @@ fi
 grep -q 'has no libswiftSwiftOnoneSupport.dylib' "$T/partial.err" \
   || fail "stage-runtime.sh failed, but not for the missing dylib: $(cat "$T/partial.err")"
 
-echo "-- staging refuses an empty out-dir before writing anything"
+echo "-- staging refuses an empty out-dir, or / by any name, before writing anything"
 # Every command that writes is faked (and fails), so a regressed guard fails this test instead of
-# deleting /usr or writing into a writable /usr/local.
+# deleting /usr or writing into a writable /usr/local. $T/rootchild/.. is / only physically (as rm
+# resolves it); /tmp/.. is / only logically on macOS, where /tmp is a symlink into /private.
 mkdir -p "$T/fakebin"
 for c in rm mkdir cp mv ln chmod; do
   printf '#!/bin/sh\necho "%s $*" >> "%s/writes.log"\nexit 1\n' "$c" "$T" > "$T/fakebin/$c"; chmod +x "$T/fakebin/$c"
 done
-if PATH="$T/fakebin:$PATH" sh scripts/stage-runtime.sh "$T/built" "" LICENSE 2>/dev/null; then
-  fail "stage-runtime.sh accepted an empty out-dir"
-fi
-[ ! -f "$T/writes.log" ] || fail "stage-runtime.sh tried to write, with an empty out-dir: $(cat "$T/writes.log")"
+ln -s /bin "$T/rootchild"
+for bad in "" // /. /tmp/.. "$T/rootchild/.."; do
+  rc=0; PATH="$T/fakebin:$PATH" sh scripts/stage-runtime.sh "$T/built" "$bad" LICENSE 2>/dev/null || rc=$?
+  [ "$rc" = 2 ] || fail "stage-runtime.sh out-dir '$bad': exit $rc, not 2 (refused)"
+  [ ! -f "$T/writes.log" ] || fail "stage-runtime.sh tried to write, with out-dir '$bad': $(cat "$T/writes.log")"
+done
 
 echo "-- package.sh refuses an OUT that has only the old /usr/lib/swift layout"
 mkdir -p "$T/old/usr/lib/swift"; cp "$T/built/libswiftCore.dylib" "$T/old/usr/lib/swift/"
