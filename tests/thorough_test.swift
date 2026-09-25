@@ -8,8 +8,8 @@
 // (_objc_realizeClassFromSwift-absent) path, via both a pure-Swift class
 // hierarchy and (guarded) an NSObject subclass.
 //
-// Build:  swiftc -O -target x86_64-apple-macosx10.9 thorough_test.swift -o thorough_test
-// Run:    ./thorough_test        (NO DYLD_* env vars)   → prints a checksum, exit(0)
+// Build:  make-selftest.sh (at -O and -Onone, rpath /usr/local/mavergreen-swift-runtime/lib/swift)
+// Run:    run-selftest.sh --gate   (NO DYLD_* env vars)   → each prints a checksum, exit(0)
 
 // A small accumulator so the optimizer can't dead-strip the work and so the
 // Mavericks operator gets one deterministic line to eyeball.

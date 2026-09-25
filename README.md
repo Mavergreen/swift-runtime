@@ -32,14 +32,24 @@ and `if #available`. Enough for **command-line / computational Swift**.
 ## Install
 
 ```sh
-sudo installer -pkg mavericks-swift-<version>.pkg -target /
+sudo installer -pkg swift-runtime-<version>.pkg -target /
 ```
-Installs `libswiftCore.dylib` into `/usr/lib/swift/`. Build consumers for
-`x86_64-apple-macosx10.9` with an **absolute** rpath of `/usr/lib/swift` (10.9's dyld does not
-honor `@loader_path`):
+Installs the runtime into `/usr/local/mavergreen-swift-runtime/lib/swift/`. A program finds it
+through an rpath naming that directory.
+
+**Building a program for 10.9 on a modern Mac.** Stock `swiftc` adds an rpath of `/usr/lib/swift`
+for this target; replace it with the runtime's:
 ```sh
-swiftc -target x86_64-apple-macosx10.9 -O -Xlinker -rpath -Xlinker /usr/lib/swift hello.swift -o hello
+swiftc -target x86_64-apple-macosx10.9 -O -no-stdlib-rpath \
+  -Xlinker -rpath -Xlinker /usr/local/mavergreen-swift-runtime/lib/swift hello.swift -o hello
 ./hello
+```
+
+**A prebuilt Swift binary** that expects the runtime in `/usr/lib/swift` needs one
+[Drydock](https://github.com/Mavergreen/drydock) statement, usually beside others it already needs to
+run on 10.9:
+```
+rpath replace /usr/lib/swift /usr/local/mavergreen-swift-runtime/lib/swift
 ```
 
 ## How it's built
@@ -67,9 +77,10 @@ byte-unchanged.
 
 ## Validation
 
-The gate is on **real 10.9.5** (a modern host is structurally blind to these bugs): the test binary
-must pass **100× consecutive `exit 0` + Guard Malloc + MallocScribble clean**, with no DYLD
-environment variables. See `tests/thorough_test.swift`.
+The gate is on **real 10.9.5** (a modern host is structurally blind to these bugs):
+`./make-selftest.sh` builds `tests/*.swift` at `-O` and `-Onone` into a bundle, and on the 10.9 box
+`./run-selftest.sh --gate` requires 500 consecutive clean exits per binary, then 10 more under Guard
+Malloc + MallocScribble + MallocGuardEdges, with no DYLD variables otherwise.
 
 ## Licensing
 
