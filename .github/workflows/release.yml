@@ -143,7 +143,8 @@ jobs:
       - name: Build SwiftUpdater.app (Cocoa/Sparkle; must NOT link Swift)
         run: |
           # The Sparkle framework is fetched inside mavericks_add_updater_app (mavericks_fetch_sparkle).
-          shipyard-cmake -S . -B "$SWRT_BUILD/build/updater" -DCMAKE_OBJC_COMPILER=/usr/bin/clang
+          shipyard-cmake -S . -B "$SWRT_BUILD/build/updater" -DCMAKE_OBJC_COMPILER=/usr/bin/clang \
+            -DCMAKE_TOOLCHAIN_FILE="$SHIPYARD_SCRIPTS/../MavericksToolchain.cmake"
           shipyard-cmake --build "$SWRT_BUILD/build/updater" --target SwiftUpdater
           otool -L "$SWRT_BUILD/build/updater/SwiftUpdater.app/Contents/MacOS/SwiftUpdater" | tee /tmp/o.txt
           ! grep -q 'libswift' /tmp/o.txt || { echo "::error::updater links a Swift runtime library (self-update circularity)"; exit 1; }
