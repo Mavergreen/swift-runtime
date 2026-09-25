@@ -1,5 +1,5 @@
 #!/bin/sh
-# platform: host-agnostic
+# platform: macOS-only -- runs the installed runtime's Mach-O tests, and Guard Malloc is libgmalloc.dylib
 #   usage: run-selftest.sh [--gate]
 #          Validates the Swift runtime INSTALLED on this Mac (OS X 10.9) by running every bin/* test,
 #          which were built with an rpath of $SWIFT_RUNTIME_PREFIX/lib/swift (make-selftest.sh).

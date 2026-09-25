@@ -1,5 +1,5 @@
 #!/bin/sh
-# platform: host-agnostic
+# platform: macOS-only -- delegates to assert_binary_compatible.sh, which reads Mach-O with lipo and otool
 # Project wrapper around mavericks-shipyard's assert_binary_compatible.sh.
 # Encodes mavericks-swift's 10.9 policy and delegates to the shared guard:
 #   - EXTEND the denylist to the full post-10.9 os_* family (underscore-robust; the
