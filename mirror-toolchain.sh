@@ -1,16 +1,16 @@
 #!/bin/sh
 # platform: macOS-only -- verifies the installer signature with pkgutil (lib.sh)
-# mirror-toolchain.sh — download the official swift.org toolchain and stage it VERBATIM.
-# No repacking: the mirrored file is byte-identical to upstream, so its SHA256 is the upstream
-# SHA256 and provenance stays checkable against download.swift.org. That digest is RECORDED, not
-# pinned -- the gate is the installer signature (see lib.sh), which holds across releases.
+# mirror-toolchain.sh — download the official swift.org toolchain VERBATIM into the build cache and
+# verify its signer. No repacking: the file is byte-identical to upstream, so its SHA256 is upstream's
+# and provenance stays checkable against download.swift.org. build.sh expands it (it is the host
+# compiler that builds the stdlib); release.yml attaches it to -mavericks.1 releases.
 set -eu
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 . "$HERE/pins.env"
-. "$HERE/lib.sh"   # -> $STC_BUILD (out-of-tree build root)
-DIST="$STC_BUILD/dist"; mkdir -p "$DIST"
-PKG="$DIST/$TOOLCHAIN_ASSET"
+. "$HERE/lib.sh"   # -> $SWIFT_BUILD
+CACHE="$SWIFT_BUILD/cache"; mkdir -p "$CACHE"
+PKG="$CACHE/$TOOLCHAIN_ASSET"
 
 if [ ! -f "$PKG" ]; then
   echo "==> downloading $TOOLCHAIN_URL (~1.5 GB)"
@@ -19,4 +19,4 @@ if [ ! -f "$PKG" ]; then
 fi
 
 verify_toolchain_signature "$PKG" || { rm -f "$PKG"; exit 1; }
-echo "OK: verbatim toolchain mirror at $PKG"
+echo "OK: swift.org toolchain at $PKG"

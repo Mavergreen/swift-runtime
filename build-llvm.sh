@@ -9,13 +9,10 @@ set -eu
 HERE="$(cd "$(dirname "$0")" && pwd)"
 . "$HERE/pins.env"
 . "$HERE/msc.sh"   # -> $SHIPYARD (shipyard scripts dir)
-. "$HERE/lib.sh"    # -> $STC_BUILD (out-of-tree build root)
-# Scratch defaults out of the tree, under $STC_BUILD. SWIFT_TOOLCHAIN_WORK still overrides
-# directly -- e.g. this project's checkout is NFS-backed, where an LLVM build is slow and
-# `rm -rf` races silly-rename, so a dev box may want scratch somewhere else entirely. CI leaves
-# this unset.
-ROOT="${SWIFT_TOOLCHAIN_WORK:-$STC_BUILD/work}"; mkdir -p "$ROOT"; cd "$ROOT"
-OUT="$STC_BUILD/out/llvm"
+. "$HERE/lib.sh"    # -> $SWIFT_BUILD (out-of-tree build root)
+# Scratch defaults out of the tree, under $SWIFT_BUILD; SWIFT_WORK overrides it (build.sh shares it).
+ROOT="${SWIFT_WORK:-$SWIFT_BUILD/work}"; mkdir -p "$ROOT"; cd "$ROOT"
+OUT="$SWIFT_BUILD/out/llvm"
 
 echo "==> 1. pinned llvm-project source (fetched BY SHA via shared clone_pinned.sh)"
 # LLVM build support cut for any other Swift release than SWIFT_VERSION builds fine and is wrong,
