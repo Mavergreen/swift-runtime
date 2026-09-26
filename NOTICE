@@ -41,3 +41,12 @@ runtime work on 10.9's objc4-532, all gated to the 10.9/10.10 code path:
 
 Build configuration (threading package = pthreads, deployment target = 10.9,
 availability flag) is recorded in MANIFEST and build.sh.
+
+The swift.org toolchain installer attached to each new upstream's first release
+(upstream-swift-*-RELEASE-osx.pkg) is a byte-for-byte mirror of the official
+installer, kept so builds remain reproducible if swift.org prunes older
+releases. It bundles components under several licenses (the Swift runtime
+libraries: Apache-2.0 WITH Runtime Library Exception; LLVM/clang/lldb:
+Apache-2.0 WITH LLVM-exception; others under their own); it is redistributed
+unmodified, its SHA256 matching upstream's. It is host build tooling and is not
+part of the runtime .pkg. Upstream: https://download.swift.org/

@@ -1,9 +1,9 @@
-.build/
+# Never commit Apple SDK/toolchain bytes, built binaries, or packages.
+*.dylib
 *.pkg
 *.tar.gz
-# Never commit Apple SDK/toolchain bytes or built runtime binaries.
-*.dylib
-# macOS + tooling cruft (baseline parity with the other mavericks-* repos)
+.build/
+# macOS + tooling cruft
 ._*
 .DS_Store
 .superpowers/
@@ -11,7 +11,11 @@ docs/
 /VERSION
 /UPSTREAM_VERSION
 
-# Default build root is $MAVERICKS_BUILD_ROOT (outside the tree); build/, out/, work/ (with its
-# nested stdlib-build/), and dist/ are only the deliberate-in-tree escape hatch
-# (MAVERICKS_BUILD_ROOT="$PWD" ./build.sh).
-/swift-runtime-cross/
+# The build root is $MAVERICKS_BUILD_ROOT/swift (outside the tree, see lib.sh). These are only the
+# deliberate in-tree escape hatch (MAVERICKS_BUILD_ROOT="$PWD" ./build.sh) and the relative build
+# dirs the scripts name (build-llvm.sh configures `-B llvm-build` inside its work dir).
+/swift/
+work/
+out/
+dist/
+llvm-build/

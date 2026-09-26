@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 # Builds swift-runtime-updater.app -- a Cocoa/Sparkle updater for the Swift runtime .pkg.
 # It links NO libswiftCore (the runtime it updates), so there is no self-update circularity.
-# This is the ONLY CMake in swift-runtime; the runtime itself is built by build.sh (swift.org source).
+# This is this repo's only CMake project: the runtime is built by build.sh (swift.org source), the LLVM build support by build-llvm.sh.
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.9 CACHE STRING "updater runs on 10.9")
 set(CMAKE_OSX_ARCHITECTURES x86_64 CACHE STRING "Intel-only")
 project(swift-runtime-updater LANGUAGES OBJC)
@@ -10,7 +10,7 @@ find_package(MavericksShipyard REQUIRED)
 include(Mavericks)          # universal umbrella: AppleClang gate + build conventions
 include(MavericksSparkle)   # the Sparkle updater .app builder
 
-# Derived, never committed: UPSTREAM_VERSION (written from build.sh's SWIFT_VERSION by
+# Derived, never committed: UPSTREAM_VERSION (written from pins.env's SWIFT_VERSION by
 # scripts/derive-upstream-version.sh) plus the shipped tags decide it.
 mavericks_resolve_version(MAVSWIFT_VERSION)
 

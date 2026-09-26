@@ -102,7 +102,11 @@ want_payload="$(printf '%s\n' . ./usr ./usr/local ./usr/local/mavergreen "./$P" 
 echo "-- package.sh stages the updater under the identity shipyard's registry derives for swift-runtime"
 U="Library/Application Support/Mavergreen/swift-runtime-updater.app"
 LA=Library/LaunchAgents/dev.mavergreen.swift-runtime-updatecheck.plist
-FEED=https://github.com/Mavergreen/swift-runtime/releases/latest/download/swift-runtime.xml
+FEED="$(sh "$SHIPYARD/product-name.sh" feed swift-runtime)" || fail "shipyard's registry derives no feed for swift-runtime"
+case "$FEED" in
+  https://github.com/Mavergreen/*/releases/latest/download/swift-runtime.xml) ;;
+  *) fail "the registry derives the feed '$FEED', not a Mavergreen repo's /releases/latest/download/swift-runtime.xml" ;;
+esac
 A="$T/upd/swift-runtime-updater.app"
 mkdir -p "$A/Contents/MacOS"
 printf '#!/bin/sh\n' > "$A/Contents/MacOS/swift-runtime-updater"; chmod +x "$A/Contents/MacOS/swift-runtime-updater"
@@ -149,8 +153,10 @@ $want_payload"
 [ -z "$(/usr/libexec/PlistBuddy -c 'Print :appcast' "$manifest" 2>/dev/null)" ] \
   || fail "with no updater the manifest names an appcast"
 
-echo "-- the pkg passes artifact conformance with no install-path deviation declared"
-if grep -q '^- install-path:' INGREDIENTS.md; then fail "INGREDIENTS.md still declares an install-path deviation"; fi
+echo "-- the pkg passes artifact conformance with no install-path deviation of its own (the swift.org mirror's is scoped to its toolchain)"
+if grep '^- install-path:' INGREDIENTS.md | grep -qv '^- install-path:Library/Developer/Toolchains/swift-\*\.xctoolchain/\*:'; then
+  fail "INGREDIENTS.md declares an install-path deviation beyond the swift.org mirror's"
+fi
 version="$(basename "$pkg" .pkg)"; version="${version#swift-runtime-}"
 conform() {
   facts="$(sh "$SHIPYARD/artifact-facts.sh" "$1" "$version")" || fail "artifact-facts.sh failed on $1"

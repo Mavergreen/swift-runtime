@@ -1,15 +1,15 @@
 # swift
 
-A **Swift runtime built from source for OS X 10.9 "Mavericks"** (Intel x86_64).
+**Swift for OS X 10.9 "Mavericks"** (Intel x86_64), built from source. Today this repo ships the
+**Swift runtime**; a toolchain that runs *on* 10.9, and one for modern Macs that targets it, come next
+from the same release.
 
 Modern Swift (6.x) assumes an Objective-C runtime and Swift ABI machinery that first shipped in
-macOS 10.14.4. `mavericks-swift` builds `libswiftCore` from unmodified
+macOS 10.14.4. This repo builds `libswiftCore` from unmodified
 [swiftlang/swift](https://github.com/swiftlang/swift) sources with a **10.9 deployment target**,
 plus a small set of source patches that make Swift's class-realization path work on 10.9's
 objc4-532 runtime. The result is **memory-safe on real hardware**: the validation test runs
 **510/510 consecutive** clean on macOS 10.9.5, verified under Guard Malloc and MallocScribble.
-
-This is Increment 0 (the core runtime) of a larger roadmap.
 
 ## What works
 
@@ -59,10 +59,11 @@ rpath replace /usr/lib/swift /usr/local/mavergreen/swift-runtime/lib/swift
 
 ## How it's built
 
-`./build.sh` on a modern macOS: fetch the pinned swift.org toolchain, check out pinned Swift +
-llvm-project sources, apply `patches/`, build the standard library only (no full LLVM), and
-self-check with the compat guard. CI does the same on a `macos-26` runner and attaches the `.pkg`
-to a GitHub Release (see `.github/workflows/release.yml`).
+On a modern macOS, in order: `./build-llvm.sh` (swiftlang's LLVM build support: TableGen and the
+CMake package, nothing that links), `./mirror-toolchain.sh` (the pinned swift.org compiler, verified
+by its signer), `./build.sh` (the standard library only, with `patches/runtime/` applied, checked by
+the compat guard), `./package.sh`. Every input is pinned in `pins.env`. CI does the same on a
+`macos-26` runner and attaches the `.pkg` to a GitHub Release (see `.github/workflows/release.yml`).
 
 ### The fix stack (all confirmed on real 10.9.5)
 

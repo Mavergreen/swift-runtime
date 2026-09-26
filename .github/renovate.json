@@ -5,10 +5,10 @@
   ],
   "customManagers": [
     {
-      "description": "Swift releases. swiftlang/swift tags them swift-X.Y.Z-RELEASE. Version and commit are captured by ONE regex so Renovate moves them together -- build.sh asserts the clone of SWIFT_TAG is exactly SWIFT_SHA, so a version bumped without its commit fails closed. SWIFT_TAG derives from SWIFT_VERSION, so there is no third literal to leave behind.",
+      "description": "Swift releases. swiftlang/swift tags them swift-X.Y.Z-RELEASE. Version and commit are captured by ONE regex so Renovate moves them together -- build.sh fetches SWIFT_TAG with clone_pinned.sh, which fails unless the checkout is exactly SWIFT_SHA, so a version bumped without its commit fails closed.",
       "customType": "regex",
       "managerFilePatterns": [
-        "/^build\\.sh$/"
+        "/^pins\\.env$/"
       ],
       "matchStrings": [
         "SWIFT_VERSION=\"(?<currentValue>[^\"]+)\"[\\s\\S]*?SWIFT_SHA=\"(?<currentDigest>[0-9a-f]{40})\""
@@ -19,31 +19,31 @@
       "extractVersionTemplate": "^swift-(?<version>.+)-RELEASE$"
     },
     {
-      "description": "The Mavergreen/swift-toolchain release supplying the host build environment. Trackable at all only because build.sh now verifies both assets against that release's own published SHA256SUMS: the hand-pasted BUILDSUPPORT_SHA256/TOOLCHAIN_SHA256 it replaces could not be updated by a bot, which is why this pin sat at 6.3.3-mavericks.1 while swift-toolchain shipped .3. The versioning regex reads -mavericks.N as the build number: Renovate's default versioning coerces it away, so .1 and .4 compared equal and the pin stayed at .1 even after it became trackable.",
+      "description": "The swiftlang/llvm-project commit the build support is cut from. llvm-project tags every Swift release swift-X.Y.Z-RELEASE, exactly as swiftlang/swift does, so this tracks that tag the same way: version and commit in ONE regex. The version is LLVM_SWIFT_RELEASE rather than SWIFT_VERSION only because two managers capturing the same literal would both rewrite it; build-llvm.sh fails unless the two are equal and LLVM_SHA is the commit at the tag.",
       "customType": "regex",
       "managerFilePatterns": [
-        "/^build\\.sh$/"
+        "/^pins\\.env$/"
       ],
       "matchStrings": [
-        "TOOLCHAIN_REF=\"(?<currentValue>[^\"]+)\""
+        "LLVM_SWIFT_RELEASE=\"(?<currentValue>[^\"]+)\"[\\s\\S]*?LLVM_SHA=\"(?<currentDigest>[0-9a-f]{40})\""
       ],
-      "depNameTemplate": "Mavergreen/swift-toolchain",
-      "packageNameTemplate": "Mavergreen/swift-toolchain",
-      "datasourceTemplate": "github-releases",
-      "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-mavericks\\.(?<build>\\d+)$"
+      "depNameTemplate": "swiftlang/llvm-project",
+      "packageNameTemplate": "swiftlang/llvm-project",
+      "datasourceTemplate": "github-tags",
+      "extractVersionTemplate": "^swift-(?<version>.+)-RELEASE$"
     }
   ],
   "packageRules": [
     {
-      "description": "ONE PR per Swift release, moving the Swift pin and TOOLCHAIN_REF together. build.sh fetches upstream-swift-<SWIFT_VERSION>-RELEASE-osx.pkg from the TOOLCHAIN_REF release, so either pin moved alone fails the build and its PR could never merge -- a Swift patch bump would sit red beside the swift-toolchain bump that fixes it. A swift-toolchain repackage (the same Swift, -mavericks.N+1) still arrives alone in this group and takes the family default.",
+      "description": "ONE PR per Swift release, moving the Swift pin and the llvm-project pin together. Apart, each fails build-llvm.sh's check that both name the same release, so neither could merge.",
       "matchDepNames": [
         "swiftlang/swift",
-        "Mavergreen/swift-toolchain"
+        "swiftlang/llvm-project"
       ],
       "groupName": "Swift release"
     },
     {
-      "description": "EXCEPTION to the family ship-if-green default. A MINOR or MAJOR Swift bump is held: the six source patches are cut against specific stdlib and runtime internals, so a bump that happens to build proves nothing about the 10.9 behaviour a macOS 26 runner cannot see. Needs a human. A PATCH bump takes the family default.",
+      "description": "EXCEPTION to the family ship-if-green default. A MINOR or MAJOR Swift bump is held: the runtime patches are cut against specific stdlib and runtime internals, so a bump that happens to build proves nothing about the 10.9 behaviour a macOS 26 runner cannot see. Needs a human until CI can run the real-10.9 gate (umbrella track E, vm-guest). A PATCH bump takes the family default.",
       "matchDepNames": [
         "swiftlang/swift"
       ],

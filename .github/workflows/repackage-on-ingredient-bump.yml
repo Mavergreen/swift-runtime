@@ -1,17 +1,15 @@
 name: repackage-on-ingredient-bump
 
-# Every pin lives in build.sh, so that is the path to watch, plus the patches that define the runtime
-# this repo exists to produce. SWIFT_VERSION is the OWN upstream and is declared by key: a Swift bump
-# is a new-upstream release (N=1), auto-cut by release.yml on the push to main. Without the key
-# declaration it would publish twice -- once from the push, once from a dispatched N+1 repackage.
-#
-# Everything else is an ingredient: TOOLCHAIN_REF (the swift-toolchain build environment) and the
-# source patches change what we ship without changing which Swift it is, which is exactly a repackage.
+# Every pin lives in pins.env; the runtime patches live under patches/. SWIFT_VERSION is the OWN
+# upstream and is declared by key: a Swift bump is a new-upstream release (N=1), auto-cut by
+# release.yml on the push to main. Without the key declaration it would publish twice -- once from
+# the push, once from a dispatched N+1 repackage. Every other pin, and every patch, changes what ships
+# without changing which Swift it is: a repackage.
 on:
   push:
     branches: [main]
     paths:
-      - 'build.sh'
+      - 'pins.env'
       - 'patches/**'
 jobs:
   repackage:
@@ -19,4 +17,4 @@ jobs:
       actions: write
     uses: Mavergreen/shipyard/.github/workflows/repackage-on-ingredient-bump.yml@v1
     with:
-      own-upstream-paths: "build.sh:SWIFT_VERSION"
+      own-upstream-paths: "pins.env:SWIFT_VERSION"
