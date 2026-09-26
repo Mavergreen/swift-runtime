@@ -124,9 +124,6 @@ jobs:
           echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
           echo "version=$VER publish=$PUBLISH"
 
-      - name: Ensure Rosetta (x86_64 self-tests run under it)
-        run: softwareupdate --install-rosetta --agree-to-license || true
-
       # No cache step here, deliberately. The host build environment is fetched and SHA-verified
       # per run from Mavergreen/swift-toolchain, so a cold run and a warm run produce the
       # same result. The previous cache keyed on hashFiles('build.sh') with no path component;
