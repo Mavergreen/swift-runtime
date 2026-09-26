@@ -9,10 +9,9 @@
 #          Env: MAVERICKS_BUILD_ROOT, TC (toolchain usr/), DIST (output dir), SWIFT_RUNTIME_PREFIX.
 set -eu
 REPO="$(cd "$(dirname "$0")" && pwd)"
-: "${MAVERICKS_BUILD_ROOT:=${TMPDIR:-/tmp}/mm-build}"
-SWRT_BUILD="$MAVERICKS_BUILD_ROOT/swift-runtime-cross"
-TC="${TC:-$SWRT_BUILD/work/toolchain/usr}"
-DIST="${DIST:-$SWRT_BUILD/dist}"
+. "$REPO/lib.sh"    # -> $SWIFT_BUILD
+TC="${TC:-$SWIFT_BUILD/work/toolchain/usr}"
+DIST="${DIST:-$SWIFT_BUILD/dist}"
 RUNTIME_LIB="${SWIFT_RUNTIME_PREFIX:-/usr/local/mavergreen/swift-runtime}/lib/swift"
 SWIFTC="$TC/bin/swiftc"
 [ -x "$SWIFTC" ] || { echo "make-selftest: no swiftc at $SWIFTC -- run build.sh first" >&2; exit 1; }

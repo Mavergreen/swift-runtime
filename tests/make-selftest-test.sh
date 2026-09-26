@@ -6,7 +6,7 @@
 set -eu
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 : "${MAVERICKS_BUILD_ROOT:=${TMPDIR:-/tmp}/mm-build}"
-TC="$MAVERICKS_BUILD_ROOT/swift-runtime-cross/work/toolchain/usr"
+TC="$MAVERICKS_BUILD_ROOT/swift/work/toolchain/usr"
 [ -x "$TC/bin/swiftc" ] || { echo "no toolchain at $TC (run build.sh) -- skipping"; exit 77; }
 DI="$(xcrun -f dyld_info)"
 

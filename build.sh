@@ -1,105 +1,45 @@
 #!/bin/sh
-# platform: macOS-only -- xcrun finds the macOS SDK the runtime compiles against
-# build.sh — reproducible from-source build of libswiftCore for macOS 10.9 / x86_64.
+# platform: macOS-only -- pkgutil and ditto expand the swift.org installer, and xcrun finds dyld_info
+# build.sh — from-source build of the Swift runtime (libswiftCore + libswiftSwiftOnoneSupport) for
+# OS X 10.9 / x86_64, staged as the runtime .pkg's payload. No Apple prebuilt runtime bytes ship.
 #
-# Produces: out/libswiftCore.dylib (+ libswiftSwiftOnoneSupport.dylib), minOS 10.9,
-# from the pinned Swift release's swift.org sources, with NO Apple prebuilt runtime bytes redistributed.
-#
-# Host: macOS with Xcode Command Line Tools (full Xcode NOT required), ninja + git, and the
-# shipyard pkg (it provides shipyard-cmake, the only cmake this family configures with).
-# Cross-target build (host may be arm64; output is x86_64). ~30-60 min from clean on 8 cores.
-#
-# Everything is PINNED below. Do not float versions — the stdlib is coupled to its compiler.
+# Inputs, all pinned in pins.env and prepared by the scripts that run before this one:
+#   build-llvm.sh        -> $SWIFT_BUILD/out/llvm             swiftlang LLVM build support
+#   mirror-toolchain.sh  -> $SWIFT_BUILD/cache/<swift.org pkg> the host compiler, signer-verified
+# Host: macOS with Command Line Tools, ninja, git, and the shipyard pkg (shipyard-cmake).
+# Output: $SWIFT_BUILD/payload/runtime, in scripts/stage-runtime.sh's layout, for package.sh.
 set -eu
 
-# ---------------------------- PINNED INPUTS ----------------------------------
-# The host build environment (swiftlang LLVM build support + the swift.org toolchain) is built
-# and published by Mavergreen/swift-toolchain. We fetch it by pinned URL + SHA256 rather
-# than building LLVM here. A CMake *build tree* bakes absolute paths into LLVMConfig.cmake at
-# configure time, so a build that reuses one is only correct while the checkout path never
-# moves -- and this repo's rename proved it does. The published tree is a CMake *install* tree,
-# which derives its prefix from its own location; nothing here depends on cache state.
-TOOLCHAIN_REPO="Mavergreen/swift-toolchain"
-TOOLCHAIN_REF="6.4.0-mavericks.1"   # renovate: github-releases Mavergreen/swift-toolchain
-SWIFT_VERSION="6.4.0"   # renovate: swiftlang/swift
-SWIFT_SHA="b8189d766d86ad7fc8106787d6ce9e402f38dd72"          # commit at SWIFT_TAG; Renovate moves it with SWIFT_VERSION
-# DERIVED from SWIFT_VERSION, never repeated: a Renovate bump rewrites one line, and a tag left
-# behind would clone a different Swift than SWIFT_SHA names. (swift-toolchain's pins.env learned this
-# the same way -- it used to repeat the version four times.)
-SWIFT_TAG="swift-${SWIFT_VERSION}-RELEASE"
-# Built by swift-toolchain, so it carries that repo's name and version; the -macos-arm64
-# suffix names the machine that built the TableGen binaries inside it.
-BUILDSUPPORT_ASSET="swift-toolchain-$TOOLCHAIN_REF-macos-arm64.tar.gz"
-# A verbatim mirror of swift.org's installer, so it keeps upstream's filename -- that correspondence
-# is what makes the mirror checkable.
-TOOLCHAIN_ASSET="upstream-swift-$SWIFT_VERSION-RELEASE-osx.pkg"
-DEPLOYMENT="10.9"
-ARCH="x86_64"
-# -----------------------------------------------------------------------------
+HERE="$(cd "$(dirname "$0")" && pwd)"   # capture BEFORE the cd below: $0 is relative as ./build.sh
+. "$HERE/pins.env"
+. "$HERE/lib.sh"    # -> $SWIFT_BUILD, verify_toolchain_signature
+. "$HERE/msc.sh"    # -> $SHIPYARD (clone_pinned.sh)
+ROOT="${SWIFT_WORK:-$SWIFT_BUILD/work}"; mkdir -p "$ROOT"; cd "$ROOT"
+DI="$(xcrun -f dyld_info)"
+LLVMB="$SWIFT_BUILD/out/llvm"
+PKG="$SWIFT_BUILD/cache/$TOOLCHAIN_ASSET"
 
-HERE="$(cd "$(dirname "$0")" && pwd)"   # script dir (= repo root); capture BEFORE any cd, since $0
-                                         # is relative when invoked as ./build.sh and we cd below.
-# platform: a family checkout may live on NFS, where a build cost 11.16s wall / 25% CPU against
-#           2.96s / 88% on local disk, identical user time -- the whole difference is I/O wait.
-: "${MAVERICKS_BUILD_ROOT:=${TMPDIR:-/tmp}/mm-build}"
-SWRT_BUILD="$MAVERICKS_BUILD_ROOT/swift-runtime-cross"
-# Scratch defaults out of the source tree, onto $MAVERICKS_BUILD_ROOT (CI: $RUNNER_TEMP, local disk).
-# SWIFT_RUNTIME_WORK still overrides directly -- e.g. to point AT the tree for a deliberate in-tree
-# build, or elsewhere entirely when the checkout itself lives on slow storage (expanding the 4.6 GB
-# toolchain payload there took hours; the difference is I/O wait, not CPU).
-ROOT="${SWIFT_RUNTIME_WORK:-$SWRT_BUILD/work}"
-mkdir -p "$ROOT"; cd "$ROOT"
-SDK="$(xcrun --show-sdk-path)"
-DI="/Library/Developer/CommandLineTools/usr/bin/dyld_info"
-
-BASE="https://github.com/$TOOLCHAIN_REPO/releases/download/$TOOLCHAIN_REF"
-
-# Verify against the release's OWN published SHA256SUMS, not hashes pasted in here. A pinned hash can
-# only vouch for bytes someone has already seen, so every bump needed a human to fetch and paste two
-# new ones -- the single thing that kept this repo's ingredients off the automated path. Both assets
-# come from our own swift-toolchain release, and publish-release.yml regenerates SHA256SUMS over
-# everything it attaches, so it covers exactly these files. (Same trust model container-tools uses
-# for the golang toolchain.)
-if [ ! -f SHA256SUMS ]; then
-  curl -fSL --retry 3 --retry-delay 5 -o SHA256SUMS.tmp "$BASE/SHA256SUMS"
-  mv SHA256SUMS.tmp SHA256SUMS
-fi
-
-fetch_verify() {   # $1 = asset filename; its expected hash comes from SHA256SUMS
-  if [ ! -f "$1" ]; then
-    curl -fSL --retry 3 --retry-delay 5 -o "$1.tmp" "$BASE/$1"
-    mv "$1.tmp" "$1"
-  fi
-  # Fail if the asset is not LISTED, rather than passing an empty expectation to shasum: an asset
-  # missing from SHA256SUMS is unverified, which must never look like a pass.
-  line="$(grep -E "  $1\$" SHA256SUMS || true)"
-  [ -n "$line" ] || { echo "FAIL: $1 is not listed in $TOOLCHAIN_REF's SHA256SUMS"; exit 1; }
-  printf '%s\n' "$line" | shasum -a 256 -c - || { echo "FAIL: $1 SHA256 mismatch"; rm -f "$1"; exit 1; }
-}
-
-echo "==> 1. host build environment (published by $TOOLCHAIN_REPO @ $TOOLCHAIN_REF)"
-fetch_verify "$BUILDSUPPORT_ASSET"
-fetch_verify "$TOOLCHAIN_ASSET"
-
-[ -d llvm/lib/cmake/llvm ] || { rm -rf llvm; tar -xzf "$BUILDSUPPORT_ASSET"; }
-LLVMB="$ROOT/llvm"
-
+echo "==> 1. host build environment (built here: LLVM build support; verified: swift.org compiler)"
+[ -d "$LLVMB/lib/cmake/llvm" ] || { echo "FAIL: no LLVM build support at $LLVMB -- run ./build-llvm.sh"; exit 1; }
+[ -f "$PKG" ] || { echo "FAIL: no swift.org toolchain at $PKG -- run ./mirror-toolchain.sh"; exit 1; }
+verify_toolchain_signature "$PKG"
 if [ ! -x toolchain/usr/bin/swiftc ]; then
   rm -rf tc-expand toolchain; mkdir -p toolchain
-  pkgutil --expand "$TOOLCHAIN_ASSET" tc-expand
+  pkgutil --expand "$PKG" tc-expand
   ditto -x -z "$(find tc-expand -name Payload | head -1)" toolchain
   rm -rf tc-expand
 fi
 TC="$ROOT/toolchain/usr"
 
-echo "==> 2. sources (pinned)"
-[ -d swift ] || git clone --depth 1 --branch "$SWIFT_TAG" https://github.com/swiftlang/swift.git swift
-test "$(git -C swift rev-parse HEAD)" = "$SWIFT_SHA"        || { echo "swift SHA mismatch"; exit 1; }
-# Defensive: some macOS checkouts fail `git apply` with iconv_open(UTF-8, UTF-8-MAC) on
-# unicode paths. Harmless where not needed; prevents a runner-specific patch-apply failure.
+echo "==> 2. pinned swift source, reset to pristine (a previous run left it patched)"
+sh "$SHIPYARD/clone_pinned.sh" https://github.com/swiftlang/swift.git "$SWIFT_TAG" "$SWIFT_SHA" swift
+test "$(git -C swift rev-parse HEAD)" = "$SWIFT_SHA" || { echo "FAIL: swift SHA mismatch (want $SWIFT_SHA)"; exit 1; }
+# platform: some macOS checkouts fail `git apply` with iconv_open(UTF-8, UTF-8-MAC) on unicode paths.
 git -C swift config core.precomposeunicode false
+git -C swift reset -q --hard "$SWIFT_SHA"
+git -C swift clean -q -fdx
 
-echo "==> 3. SOURCE PATCHES (six; all in ./patches, applied in order)"
+echo "==> 3. runtime patches (six; patches/runtime, applied in order)"
 #  0001 unsized operator delete  — 10.9's libc++ lacks __ZdlPvm (sized delete).
 #       Safe: IRGen (the only consumer needing sized dealloc) isn't built here.
 #  0002 os-version 10.9 fallback — guards os_system_version_get_current_version
@@ -126,7 +66,7 @@ echo "==> 3. SOURCE PATCHES (six; all in ./patches, applied in order)"
 #       0005's superIsTypeMetadata==0. Confirmed safe on real 10.9.5 (pure-objc
 #       classes leave data low bits free). This is the ROOT fix 0005 symptom-patched.
 # Patches are --no-prefix format; apply with -p0.
-PATCHES_DIR="$HERE/patches"
+PATCHES_DIR="$HERE/patches/runtime"
 for p in "$PATCHES_DIR"/0001-*.patch "$PATCHES_DIR"/0002-*.patch "$PATCHES_DIR"/0003-*.patch \
          "$PATCHES_DIR"/0004-*.patch "$PATCHES_DIR"/0005-*.patch "$PATCHES_DIR"/0007-*.patch; do
   git -C swift apply -p0 --check "$p" && git -C swift apply -p0 "$p" || { echo "patch failed: $p"; exit 1; }
@@ -173,7 +113,7 @@ echo "==> 5. build libswiftCore (+ SwiftOnoneSupport)"
 ninja -C "$ROOT/stdlib-build" swiftCore-macosx-$ARCH swiftSwiftOnoneSupport-macosx-$ARCH
 
 echo "==> 6. stage the payload (usr/local/mavergreen/swift-runtime/, for package.sh's pkgbuild --root)"
-OUT="${SWIFT_RUNTIME_OUT:-$SWRT_BUILD/out}"
+OUT="${SWIFT_RUNTIME_OUT:-$SWIFT_BUILD/payload/runtime}"
 sh "$HERE/scripts/stage-runtime.sh" "$ROOT/stdlib-build/lib/swift/macosx/$ARCH" "$OUT" "$HERE/LICENSE"
 CORE="$OUT/usr/local/mavergreen/swift-runtime/lib/swift/libswiftCore.dylib"
 

@@ -8,15 +8,12 @@
 # components; our payload is a plain libswiftCore.dylib (a file), always installed.
 set -eu
 
-# platform: a family checkout may live on NFS, where a build cost 11.16s wall / 25% CPU against
-#           2.96s / 88% on local disk, identical user time -- the whole difference is I/O wait.
-: "${MAVERICKS_BUILD_ROOT:=${TMPDIR:-/tmp}/mm-build}"
-SWRT_BUILD="$MAVERICKS_BUILD_ROOT/swift-runtime-cross"
-OUT="${OUT:-$SWRT_BUILD/out}"
-DIST="${DIST:-$SWRT_BUILD/dist}"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+. "$HERE/lib.sh"    # -> $SWIFT_BUILD
+OUT="${OUT:-$SWIFT_BUILD/payload/runtime}"
+DIST="${DIST:-$SWIFT_BUILD/dist}"
 # The full version: reuses VERSION if the workflow already resolved it this run, else derives it
 # from UPSTREAM_VERSION + the shipped tags. Never a committed file.
-HERE="$(cd "$(dirname "$0")" && pwd)"
 [ -f "$HERE/UPSTREAM_VERSION" ] || sh "$HERE/scripts/derive-upstream-version.sh" >/dev/null
 . "$HERE/msc.sh"        # -> $SHIPYARD: resolve-version, stage_product and set_install_floor
 VERSION="$(MAVERICKS_ROOT="$HERE" sh "$SHIPYARD/resolve-version.sh")"
@@ -38,7 +35,7 @@ stray="$(find "$OUT" -mindepth 1 -maxdepth 1 ! -type d)"
 [ -z "$stray" ] || { echo "files at the payload root would install into /: $stray" >&2; exit 1; }
 
 echo ">> stage the manifest, install scripts, and the updater app + LaunchAgent (if built)"
-UPD_APP="${UPD_APP:-$SWRT_BUILD/build/updater/swift-runtime-updater.app}"
+UPD_APP="${UPD_APP:-$SWIFT_BUILD/build/updater/swift-runtime-updater.app}"
 # Only this step puts anything under $OUT/Library, and $OUT persists between builds: clear it, or a
 # previous run's updater ships alongside this one.
 rm -rf "$OUT/Library"
@@ -47,10 +44,10 @@ set -- --stage "$OUT" --product swift-runtime --name "Mavericks Swift Runtime" -
 if [ -d "$UPD_APP" ]; then
   set -- "$@" --updater-app "$UPD_APP"
 elif [ "${REQUIRE_UPDATER:-}" = 1 ]; then
-  echo "no updater app at $UPD_APP, and REQUIRE_UPDATER=1: a release never ships without its updater -- build it: shipyard-cmake --build \"\$SWRT_BUILD/build/updater\" --target swift-runtime-updater" >&2
+  echo "no updater app at $UPD_APP, and REQUIRE_UPDATER=1: a release never ships without its updater -- build it: shipyard-cmake --build \"\$SWIFT_BUILD/build/updater\" --target swift-runtime-updater" >&2
   exit 1
 else
-  echo "   (no updater app at $UPD_APP; packaging runtime only -- build it: shipyard-cmake --build \"\$SWRT_BUILD/build/updater\")"
+  echo "   (no updater app at $UPD_APP; packaging runtime only -- build it: shipyard-cmake --build \"\$SWIFT_BUILD/build/updater\")"
 fi
 sh "$SHIPYARD/stage_product.sh" "$@"
 
