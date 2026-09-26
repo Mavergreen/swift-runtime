@@ -1,5 +1,5 @@
 #!/bin/sh
-# platform: host-agnostic
+# platform: macOS-only -- BSD sed -i '' and shipyard-cmake
 # build-llvm.sh — build a RELOCATABLE LLVM build-support tree for the Swift stdlib build.
 #
 # Produces out/llvm: a CMake *install* tree (relocatable — LLVMConfig.cmake derives its prefix
@@ -40,7 +40,7 @@ test "$(git -C llvm-project rev-parse HEAD)" = "$LLVM_SHA" || {
 
 echo "==> 2. configure + build TableGen only (libswiftCore does not link LLVM)"
 # spec: 2026-09-13 shipyard CMake flag day -- the .cmake files installed in step 3 ARE the shipped
-#       product, and swift-runtime's build.sh consumes them with shipyard-cmake. Generating them
+#       product, and this repo's build.sh consumes them with shipyard-cmake. Generating them
 #       with one CMake and consuming them with another is the mismatch this repo exists to prevent,
 #       so the same pinned shipyard-cmake writes them.
 if [ ! -x llvm-build/bin/llvm-tblgen ]; then

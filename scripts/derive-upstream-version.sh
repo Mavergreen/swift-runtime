@@ -2,8 +2,8 @@
 # platform: host-agnostic
 # Write UPSTREAM_VERSION = SWIFT_VERSION, the ONE authoritative Swift pin in pins.env.
 #
-# Reads the pin with sed rather than sourcing pins.env, deliberately: pins.env computes VERSION (the
-# full <upstream>-mavericks.N), which is derived FROM this file. Sourcing it here would be circular.
+# Reads the one pin with sed; pins.env is pins-only (tests/pins-test.sh), so sourcing it would also
+# work, but this script needs nothing else from it.
 #
 # So there is still exactly one place to bump Swift -- pins.env's SWIFT_VERSION, which Renovate
 # manages -- and UPSTREAM_VERSION follows it automatically. It is build-derived and gitignored;

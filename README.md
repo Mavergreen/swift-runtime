@@ -61,9 +61,11 @@ rpath replace /usr/lib/swift /usr/local/mavergreen/swift-runtime/lib/swift
 
 On a modern macOS, in order: `./build-llvm.sh` (swiftlang's LLVM build support: TableGen and the
 CMake package, nothing that links), `./mirror-toolchain.sh` (the pinned swift.org compiler, verified
-by its signer), `./build.sh` (the standard library only, with `patches/runtime/` applied, checked by
-the compat guard), `./package.sh`. Every input is pinned in `pins.env`. CI does the same on a
-`macos-26` runner and attaches the `.pkg` to a GitHub Release (see `.github/workflows/release.yml`).
+by its signer), `./build.sh` (the standard library only, with `patches/runtime/` applied, then its
+own self pre-flight), `./package.sh`. CI runs the compat guard (`scripts/guard.sh`) after `build.sh`.
+Every source, tool and compiler input is pinned in `pins.env` (the build SDK is not yet: see
+`INGREDIENTS.md`). CI does the same on a `macos-26` runner and attaches the `.pkg` to a GitHub
+Release (see `.github/workflows/release.yml`).
 
 ### The fix stack (all confirmed on real 10.9.5)
 
@@ -90,12 +92,16 @@ Malloc + MallocScribble + MallocGuardEdges, with no DYLD variables otherwise.
 
 ## Licensing
 
-Swift is **Apache License 2.0 with the Runtime Library Exception** (see `LICENSE`). `mavericks-swift`
-builds that source and redistributes the resulting binary under those terms — it does **not**
-redistribute any Apple prebuilt runtime, SDK, or framework. See `NOTICE` for attribution and the
-list of local patches. This repo's own glue (scripts, packaging) is under the same license.
+Swift is **Apache License 2.0 with the Runtime Library Exception** (see `LICENSE`). `swift`
+builds that source and redistributes the resulting binary under those terms — the runtime `.pkg`
+contains only binaries built here from source (no Apple prebuilt runtime, SDK, or framework).
+Separately, each new upstream's first release (`-mavericks.1`) also attaches the official swift.org
+toolchain installer, mirrored byte-for-byte and unmodified (`upstream-swift-*-RELEASE-osx.pkg`),
+which contains upstream's prebuilt binaries under their own licenses. See `NOTICE` for attribution
+and the list of local patches. This repo's own glue (scripts, packaging) is under the same license.
 
 ## Provenance
 
-Every release ships a `MANIFEST` with the exact Swift version, source commit SHAs, build flags, and
-per-file `sha256`. No Apple bytes are committed here.
+Each release's notes list the pinned build ingredients and the local patches, generated from
+`pins.env` and `patches/` by shipyard's release-notes generator. `INGREDIENTS.md` explains each pin.
+No Apple bytes are committed here.
